@@ -57,6 +57,13 @@ public class MangaController {
         return manga;
     }
 
+    @PostMapping("/check-all")
+    public List<Manga> checkAll() {
+        List<Manga> all = repository.findAll();
+        for (Manga manga : all) mangaCheckerService.check(manga);
+        return repository.findAll();
+    }
+
     @PostMapping("/{id}/check")
     public Manga checkNow(@PathVariable Long id) {
         Manga manga = repository.findById(id)

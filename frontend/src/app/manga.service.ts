@@ -26,6 +26,10 @@ export class MangaService {
     return this.http.post<Manga>(this.apiUrl, { title });
   }
 
+  checkAll(): Observable<Manga[]> {
+    return this.http.post<Manga[]>(`${this.apiUrl}/check-all`, null);
+  }
+
   check(id: number): Observable<Manga> {
     return this.http.post<Manga>(`${this.apiUrl}/${id}/check`, null);
   }

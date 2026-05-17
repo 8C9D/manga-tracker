@@ -22,6 +22,7 @@ export class App implements OnInit {
   newTitle = '';
   errorMessage = signal('');
   checkingId = signal<number | null>(null);
+  checkingAll = signal(false);
   markingReadId = signal<number | null>(null);
 
   constructor(private mangaService: MangaService) {}
@@ -49,6 +50,21 @@ export class App implements OnInit {
       error: (err) => this.errorMessage.set(
         err.status === 409 ? `"${title}" is already being tracked.` : 'Failed to add manga.'
       )
+    });
+  }
+
+  checkAll(): void {
+    this.checkingAll.set(true);
+    this.mangaService.checkAll().subscribe({
+      next: (list) => {
+        this.mangaList.set(list);
+        this.checkingAll.set(false);
+        this.errorMessage.set('');
+      },
+      error: () => {
+        this.errorMessage.set('Check all failed.');
+        this.checkingAll.set(false);
+      }
     });
   }
 
