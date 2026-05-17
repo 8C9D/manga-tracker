@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Manga, MangaService } from './manga.service';
@@ -11,6 +11,14 @@ import { Manga, MangaService } from './manga.service';
 })
 export class App implements OnInit {
   mangaList = signal<Manga[]>([]);
+  sortedMangaList = computed(() =>
+    [...this.mangaList()].sort((a, b) => {
+      if (!a.nextCheckDate && !b.nextCheckDate) return 0;
+      if (!a.nextCheckDate) return -1;
+      if (!b.nextCheckDate) return 1;
+      return a.nextCheckDate < b.nextCheckDate ? -1 : a.nextCheckDate > b.nextCheckDate ? 1 : 0;
+    })
+  );
   newTitle = '';
   errorMessage = signal('');
   checkingId = signal<number | null>(null);

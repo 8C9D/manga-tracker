@@ -14,8 +14,8 @@
 
   <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
 
-  <ul class="manga-list" *ngIf="mangaList().length > 0; else empty">
-    <li *ngFor="let manga of mangaList()">
+  <ul class="manga-list" *ngIf="sortedMangaList().length > 0; else empty">
+    <li *ngFor="let manga of sortedMangaList()">
       <div class="manga-card">
         <div class="manga-info">
           <span class="manga-title">{{ manga.title }}</span>
