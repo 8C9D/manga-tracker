@@ -93,8 +93,19 @@ public class MangaDexService {
     }
 
     private String extractTitle(MangaAttributes attrs) {
-        if (attrs == null || attrs.title() == null || attrs.title().isEmpty()) return "Unknown";
-        return attrs.title().getOrDefault("en", attrs.title().values().iterator().next());
+        if (attrs == null) return "Unknown";
+        if (attrs.title() != null && attrs.title().containsKey("en")) {
+            return attrs.title().get("en");
+        }
+        if (attrs.altTitles() != null) {
+            for (Map<String, String> alt : attrs.altTitles()) {
+                if (alt.containsKey("en")) return alt.get("en");
+            }
+        }
+        if (attrs.title() != null && !attrs.title().isEmpty()) {
+            return attrs.title().values().iterator().next();
+        }
+        return "Unknown";
     }
 
     private String extractCoverUrl(MangaEntry entry) {
@@ -119,7 +130,7 @@ public class MangaDexService {
     record MangaEntry(String id, MangaAttributes attributes, List<Relationship> relationships) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record MangaAttributes(Map<String, String> title) {}
+    record MangaAttributes(Map<String, String> title, List<Map<String, String>> altTitles) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     record Relationship(String type, RelationshipAttributes attributes) {}
