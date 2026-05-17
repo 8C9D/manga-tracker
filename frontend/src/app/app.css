@@ -216,37 +216,60 @@ h1 {
 
 .manga-list {
   list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .manga-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .manga-list li {
   background: #fff;
-  padding: 14px 16px;
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid #e5e7eb;
-  font-size: 1rem;
   color: #111;
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.manga-cover-wrap {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  background: #f3f4f6;
+  flex-shrink: 0;
 }
 
 .manga-cover {
-  width: 64px;
-  height: 90px;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  border-radius: 4px;
-  flex-shrink: 0;
+  display: block;
+}
+
+.manga-cover-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #e5e7eb;
+}
+
+.manga-card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 10px 12px 12px;
+  gap: 10px;
 }
 
 .manga-actions {
   display: flex;
-  flex-direction: column;
   gap: 6px;
-  flex-shrink: 0;
-  margin-left: auto;
+  margin-top: auto;
 }
 
 .manga-info {
@@ -254,7 +277,6 @@ h1 {
   flex-direction: column;
   gap: 4px;
   min-width: 0;
-  flex: 1;
 }
 
 .manga-title {
@@ -265,8 +287,8 @@ h1 {
   font-size: 0.8rem;
   color: #6b7280;
   display: flex;
-  gap: 6px;
-  align-items: center;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .separator {
@@ -284,15 +306,15 @@ h1 {
 }
 
 .mark-read-btn {
-  padding: 6px 12px;
-  font-size: 0.85rem;
+  padding: 6px 8px;
+  font-size: 0.78rem;
   background: transparent;
   color: #16a34a;
   border: 1px solid #16a34a;
   border-radius: 5px;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
-  width: 100%;
+  flex: 1;
 }
 
 .mark-read-btn:hover:not(:disabled) {
@@ -306,15 +328,15 @@ h1 {
 }
 
 .check-btn {
-  padding: 6px 12px;
-  font-size: 0.85rem;
+  padding: 6px 8px;
+  font-size: 0.78rem;
   background: transparent;
   color: #4f46e5;
   border: 1px solid #4f46e5;
   border-radius: 5px;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
-  width: 100%;
+  flex: 1;
 }
 
 .check-btn:hover:not(:disabled) {
@@ -328,15 +350,15 @@ h1 {
 }
 
 .remove-btn {
-  padding: 6px 12px;
-  font-size: 0.85rem;
+  padding: 6px 8px;
+  font-size: 0.78rem;
   background: transparent;
   color: #dc2626;
   border: 1px solid #dc2626;
   border-radius: 5px;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
-  width: 100%;
+  flex: 1;
 }
 
 .remove-btn:hover {
