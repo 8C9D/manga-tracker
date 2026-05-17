@@ -81,7 +81,6 @@ public class MangaDexService {
                             .path("/manga/{id}/feed")
                             .queryParam("limit", 1)
                             .queryParam("order[chapter]", "desc")
-                            .queryParam("translatedLanguage[]", "en")
                             .build(mangadexId))
                     .retrieve()
                     .body(ChapterListResponse.class);
