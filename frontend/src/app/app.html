@@ -9,8 +9,24 @@
       placeholder="Enter manga title..."
       required
     />
-    <button type="submit">Add</button>
+    <button type="submit" [disabled]="isSearching()">
+      {{ isSearching() ? 'Searching...' : 'Search' }}
+    </button>
   </form>
+
+  <div class="search-results" *ngIf="searchResults().length > 0">
+    <div class="search-results-header">
+      <span class="search-results-label">Select a manga to add:</span>
+      <button class="cancel-search-btn" (click)="cancelSearch()">Cancel</button>
+    </div>
+    <ul class="search-result-list">
+      <li *ngFor="let result of searchResults()" class="search-result-item">
+        <img *ngIf="result.coverUrl" [src]="result.coverUrl" [alt]="result.title" class="search-result-cover" referrerpolicy="no-referrer" />
+        <span class="search-result-title">{{ result.title }}</span>
+        <button class="add-result-btn" (click)="confirmAdd(result)">Add</button>
+      </li>
+    </ul>
+  </div>
 
   <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
 

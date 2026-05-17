@@ -9,6 +9,7 @@ import org.springframework.web.client.RestClient;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -22,34 +23,30 @@ public class MangaDexService {
         this.restClient = builder.baseUrl("https://api.mangadex.org").build();
     }
 
-    public Optional<MangaSearchResult> findManga(String title) {
+    public List<MangaSearchResult> searchManga(String title) {
         try {
             MangaListResponse response = restClient.get()
                     .uri(uri -> uri
                             .path("/manga")
                             .queryParam("title", title)
-                            .queryParam("limit", 1)
+                            .queryParam("limit", 5)
                             .queryParam("includes[]", "cover_art")
                             .build())
                     .retrieve()
                     .body(MangaListResponse.class);
-            if (response == null || response.data() == null || response.data().isEmpty()) {
-                return Optional.empty();
-            }
-            MangaEntry entry = response.data().get(0);
-            String coverUrl = null;
-            if (entry.relationships() != null) {
-                coverUrl = entry.relationships().stream()
-                        .filter(r -> "cover_art".equals(r.type()) && r.attributes() != null)
-                        .findFirst()
-                        .map(r -> "https://uploads.mangadex.org/covers/" + entry.id() + "/" + r.attributes().fileName() + ".256.jpg")
-                        .orElse(null);
-            }
-            return Optional.of(new MangaSearchResult(entry.id(), coverUrl));
+            if (response == null || response.data() == null) return List.of();
+            return response.data().stream()
+                    .map(entry -> new MangaSearchResult(entry.id(), extractTitle(entry.attributes()), extractCoverUrl(entry)))
+                    .toList();
         } catch (Exception e) {
             log.warn("MangaDex search failed for '{}': {}", title, e.getMessage());
-            return Optional.empty();
+            return List.of();
         }
+    }
+
+    public Optional<MangaSearchResult> findManga(String title) {
+        List<MangaSearchResult> results = searchManga(title);
+        return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
     }
 
     public Optional<String> fetchCoverUrl(String mangadexId) {
@@ -64,10 +61,7 @@ public class MangaDexService {
             if (response == null || response.data() == null || response.data().relationships() == null) {
                 return Optional.empty();
             }
-            return response.data().relationships().stream()
-                    .filter(r -> "cover_art".equals(r.type()) && r.attributes() != null)
-                    .findFirst()
-                    .map(r -> "https://uploads.mangadex.org/covers/" + mangadexId + "/" + r.attributes().fileName() + ".256.jpg");
+            return Optional.ofNullable(extractCoverUrl(response.data()));
         } catch (Exception e) {
             log.warn("MangaDex cover fetch failed for '{}': {}", mangadexId, e.getMessage());
             return Optional.empty();
@@ -98,8 +92,22 @@ public class MangaDexService {
         }
     }
 
+    private String extractTitle(MangaAttributes attrs) {
+        if (attrs == null || attrs.title() == null || attrs.title().isEmpty()) return "Unknown";
+        return attrs.title().getOrDefault("en", attrs.title().values().iterator().next());
+    }
+
+    private String extractCoverUrl(MangaEntry entry) {
+        if (entry.relationships() == null) return null;
+        return entry.relationships().stream()
+                .filter(r -> "cover_art".equals(r.type()) && r.attributes() != null)
+                .findFirst()
+                .map(r -> "https://uploads.mangadex.org/covers/" + entry.id() + "/" + r.attributes().fileName() + ".256.jpg")
+                .orElse(null);
+    }
+
     public record ChapterInfo(String chapter, LocalDate publishedAt) {}
-    public record MangaSearchResult(String id, String coverUrl) {}
+    public record MangaSearchResult(String id, String title, String coverUrl) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     record MangaListResponse(List<MangaEntry> data) {}
@@ -108,7 +116,10 @@ public class MangaDexService {
     record MangaSingleResponse(MangaEntry data) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record MangaEntry(String id, List<Relationship> relationships) {}
+    record MangaEntry(String id, MangaAttributes attributes, List<Relationship> relationships) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record MangaAttributes(Map<String, String> title) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     record Relationship(String type, RelationshipAttributes attributes) {}

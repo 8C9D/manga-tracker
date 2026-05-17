@@ -19,6 +19,7 @@ public class MangaController {
     private final UserRepository userRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final MangaCheckerService mangaCheckerService;
+    private final MangaDexService mangaDexService;
 
     @Value("${app.default-user.phone}")
     private String defaultUserPhone;
@@ -26,11 +27,13 @@ public class MangaController {
     public MangaController(MangaRepository repository,
                            UserRepository userRepository,
                            SubscriptionRepository subscriptionRepository,
-                           MangaCheckerService mangaCheckerService) {
+                           MangaCheckerService mangaCheckerService,
+                           MangaDexService mangaDexService) {
         this.repository = repository;
         this.userRepository = userRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.mangaCheckerService = mangaCheckerService;
+        this.mangaDexService = mangaDexService;
     }
 
     @GetMapping
@@ -38,12 +41,22 @@ public class MangaController {
         return repository.findAll();
     }
 
+    @GetMapping("/search")
+    public List<MangaSearchDto> search(@RequestParam String q) {
+        return mangaDexService.searchManga(q).stream()
+                .map(r -> new MangaSearchDto(r.id(), r.title(), r.coverUrl()))
+                .toList();
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Manga add(@RequestBody MangaRequest request) {
         Manga manga;
         try {
-            manga = repository.save(new Manga(request.title()));
+            Manga m = new Manga(request.title());
+            if (request.mangadexId() != null) m.setMangadexId(request.mangadexId());
+            if (request.coverUrl() != null) m.setCoverUrl(request.coverUrl());
+            manga = repository.save(m);
         } catch (DataIntegrityViolationException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Already tracking \"" + request.title() + "\"");
         }
@@ -94,6 +107,7 @@ public class MangaController {
         repository.deleteById(id);
     }
 
-    public record MangaRequest(String title) {}
+    public record MangaRequest(String title, String mangadexId, String coverUrl) {}
+    public record MangaSearchDto(String mangadexId, String title, String coverUrl) {}
     public record MarkReadRequest(String chapter) {}
 }

@@ -3,6 +3,12 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../environments/environment';
 
+export interface MangaSearchResult {
+  mangadexId: string;
+  title: string;
+  coverUrl: string | null;
+}
+
 export interface Manga {
   id: number;
   title: string;
@@ -22,8 +28,12 @@ export class MangaService {
     return this.http.get<Manga[]>(this.apiUrl);
   }
 
-  add(title: string): Observable<Manga> {
-    return this.http.post<Manga>(this.apiUrl, { title });
+  search(q: string): Observable<MangaSearchResult[]> {
+    return this.http.get<MangaSearchResult[]>(`${this.apiUrl}/search`, { params: { q } });
+  }
+
+  add(title: string, mangadexId?: string, coverUrl?: string | null): Observable<Manga> {
+    return this.http.post<Manga>(this.apiUrl, { title, mangadexId, coverUrl });
   }
 
   checkAll(): Observable<Manga[]> {

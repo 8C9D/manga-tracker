@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { Manga, MangaService } from './manga.service';
+import { Manga, MangaSearchResult, MangaService } from './manga.service';
 
 @Component({
   selector: 'app-root',
@@ -25,6 +25,8 @@ export class App implements OnInit {
   checkingAll = signal(false);
   markingReadId = signal<number | null>(null);
   removingAll = signal(false);
+  searchResults = signal<MangaSearchResult[]>([]);
+  isSearching = signal(false);
 
   constructor(private mangaService: MangaService) {}
 
@@ -42,16 +44,42 @@ export class App implements OnInit {
   addManga(): void {
     const title = this.newTitle.trim();
     if (!title) return;
-    this.mangaService.add(title).subscribe({
+    this.isSearching.set(true);
+    this.errorMessage.set('');
+    this.searchResults.set([]);
+    this.mangaService.search(title).subscribe({
+      next: (results) => {
+        this.isSearching.set(false);
+        if (results.length === 0) {
+          this.errorMessage.set(`No results found for "${title}" on MangaDex.`);
+        } else {
+          this.searchResults.set(results);
+        }
+      },
+      error: () => {
+        this.isSearching.set(false);
+        this.errorMessage.set('Search failed.');
+      }
+    });
+  }
+
+  confirmAdd(result: MangaSearchResult): void {
+    this.mangaService.add(result.title, result.mangadexId, result.coverUrl).subscribe({
       next: (manga) => {
         this.mangaList.update(list => [...list, manga]);
+        this.searchResults.set([]);
         this.newTitle = '';
         this.errorMessage.set('');
       },
       error: (err) => this.errorMessage.set(
-        err.status === 409 ? `"${title}" is already being tracked.` : 'Failed to add manga.'
+        err.status === 409 ? `"${result.title}" is already being tracked.` : 'Failed to add manga.'
       )
     });
+  }
+
+  cancelSearch(): void {
+    this.searchResults.set([]);
+    this.errorMessage.set('');
   }
 
   checkAll(): void {
