@@ -1,0 +1,36 @@
+<div class="container">
+  <h1>Manga Tracker</h1>
+
+  <form class="add-form" (ngSubmit)="addManga()">
+    <input
+      type="text"
+      [(ngModel)]="newTitle"
+      name="title"
+      placeholder="Enter manga title..."
+      required
+    />
+    <button type="submit">Add</button>
+  </form>
+
+  <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+
+  <ul class="manga-list" *ngIf="mangaList().length > 0; else empty">
+    <li *ngFor="let manga of mangaList()">
+      <div class="manga-info">
+        <span class="manga-title">{{ manga.title }}</span>
+        <div class="manga-meta">
+          <span *ngIf="manga.latestChapter; else noChapter">Ch. {{ manga.latestChapter }}</span>
+          <ng-template #noChapter><span class="pending">No chapter yet</span></ng-template>
+          <span class="separator">·</span>
+          <span *ngIf="manga.nextCheckDate; else noCheck">Next check: {{ manga.nextCheckDate }}</span>
+          <ng-template #noCheck><span class="pending">Check pending</span></ng-template>
+        </div>
+      </div>
+      <button class="remove-btn" (click)="removeManga(manga.id)">Remove</button>
+    </li>
+  </ul>
+
+  <ng-template #empty>
+    <p class="empty">No manga tracked yet. Add one above!</p>
+  </ng-template>
+</div>
