@@ -20,6 +20,7 @@ public class Manga {
     private String latestChapter;
     private String lastReadChapter;
     private LocalDate nextCheckDate;
+    private boolean noSource = false;
 
     @Enumerated(EnumType.STRING)
     private DayOfWeek updateDayOfWeek;
@@ -52,4 +53,7 @@ public class Manga {
 
     public DayOfWeek getUpdateDayOfWeek() { return updateDayOfWeek; }
     public void setUpdateDayOfWeek(DayOfWeek updateDayOfWeek) { this.updateDayOfWeek = updateDayOfWeek; }
+
+    public boolean isNoSource() { return noSource; }
+    public void setNoSource(boolean noSource) { this.noSource = noSource; }
 }

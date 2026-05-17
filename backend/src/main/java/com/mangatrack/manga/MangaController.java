@@ -56,6 +56,7 @@ public class MangaController {
             Manga m = new Manga(request.title());
             if (request.mangadexId() != null) m.setMangadexId(request.mangadexId());
             if (request.coverUrl() != null) m.setCoverUrl(request.coverUrl());
+            if (request.noSource()) m.setNoSource(true);
             manga = repository.save(m);
         } catch (DataIntegrityViolationException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Already tracking \"" + request.title() + "\"");
@@ -107,7 +108,7 @@ public class MangaController {
         repository.deleteById(id);
     }
 
-    public record MangaRequest(String title, String mangadexId, String coverUrl) {}
+    public record MangaRequest(String title, String mangadexId, String coverUrl, boolean noSource) {}
     public record MangaSearchDto(String mangadexId, String title, String coverUrl) {}
     public record MarkReadRequest(String chapter) {}
 }

@@ -16,6 +16,7 @@ export interface Manga {
   latestChapter: string | null;
   lastReadChapter: string | null;
   nextCheckDate: string | null;
+  noSource: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -32,8 +33,8 @@ export class MangaService {
     return this.http.get<MangaSearchResult[]>(`${this.apiUrl}/search`, { params: { q } });
   }
 
-  add(title: string, mangadexId?: string, coverUrl?: string | null): Observable<Manga> {
-    return this.http.post<Manga>(this.apiUrl, { title, mangadexId, coverUrl });
+  add(title: string, mangadexId?: string, coverUrl?: string | null, noSource?: boolean): Observable<Manga> {
+    return this.http.post<Manga>(this.apiUrl, { title, mangadexId, coverUrl, noSource: noSource ?? false });
   }
 
   checkAll(): Observable<Manga[]> {

@@ -27,6 +27,7 @@ export class App implements OnInit {
   removingAll = signal(false);
   searchResults = signal<MangaSearchResult[]>([]);
   isSearching = signal(false);
+  showAddAnyway = signal(false);
 
   constructor(private mangaService: MangaService) {}
 
@@ -52,8 +53,10 @@ export class App implements OnInit {
         this.isSearching.set(false);
         if (results.length === 0) {
           this.errorMessage.set(`No results found for "${title}" on MangaDex.`);
+          this.showAddAnyway.set(true);
         } else {
           this.searchResults.set(results);
+          this.showAddAnyway.set(false);
         }
       },
       error: () => {
@@ -78,8 +81,24 @@ export class App implements OnInit {
     });
   }
 
+  addNoSource(): void {
+    const title = this.newTitle.trim();
+    this.mangaService.add(title, undefined, undefined, true).subscribe({
+      next: (manga) => {
+        this.mangaList.update(list => [...list, manga]);
+        this.showAddAnyway.set(false);
+        this.newTitle = '';
+        this.errorMessage.set('');
+      },
+      error: (err) => this.errorMessage.set(
+        err.status === 409 ? `"${title}" is already being tracked.` : 'Failed to add manga.'
+      )
+    });
+  }
+
   cancelSearch(): void {
     this.searchResults.set([]);
+    this.showAddAnyway.set(false);
     this.errorMessage.set('');
   }
 

@@ -324,6 +324,32 @@ h1 {
   color: #fff;
 }
 
+.no-source {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.add-anyway {
+  margin-bottom: 16px;
+}
+
+.add-anyway-btn {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  background: transparent;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.add-anyway-btn:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  color: #374151;
+}
+
 .empty {
   color: #6b7280;
   font-size: 0.95rem;

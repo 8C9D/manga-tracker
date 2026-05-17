@@ -29,6 +29,7 @@ public class MangaCheckerService {
     }
 
     public void check(Manga manga) {
+        if (manga.isNoSource()) return;
         LocalDate today = LocalDate.now();
 
         if (manga.getMangadexId() == null) {
