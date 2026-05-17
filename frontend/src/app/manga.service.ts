@@ -6,6 +6,7 @@ import { environment } from '../environments/environment';
 export interface Manga {
   id: number;
   title: string;
+  coverUrl: string | null;
   latestChapter: string | null;
   nextCheckDate: string | null;
 }

@@ -16,6 +16,7 @@ public class Manga {
     private String title;
 
     private String mangadexId;
+    private String coverUrl;
     private String latestChapter;
     private LocalDate nextCheckDate;
 
@@ -35,6 +36,9 @@ public class Manga {
 
     public String getMangadexId() { return mangadexId; }
     public void setMangadexId(String mangadexId) { this.mangadexId = mangadexId; }
+
+    public String getCoverUrl() { return coverUrl; }
+    public void setCoverUrl(String coverUrl) { this.coverUrl = coverUrl; }
 
     public String getLatestChapter() { return latestChapter; }
     public void setLatestChapter(String latestChapter) { this.latestChapter = latestChapter; }

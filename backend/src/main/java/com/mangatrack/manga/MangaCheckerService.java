@@ -32,14 +32,19 @@ public class MangaCheckerService {
         LocalDate today = LocalDate.now();
 
         if (manga.getMangadexId() == null) {
-            Optional<String> id = mangaDexService.findMangadexId(manga.getTitle());
-            if (id.isEmpty()) {
+            Optional<MangaDexService.MangaSearchResult> result = mangaDexService.findManga(manga.getTitle());
+            if (result.isEmpty()) {
                 log.warn("'{}' not found on MangaDex, retrying tomorrow", manga.getTitle());
                 manga.setNextCheckDate(today.plusDays(1));
                 repository.save(manga);
                 return;
             }
-            manga.setMangadexId(id.get());
+            manga.setMangadexId(result.get().id());
+            manga.setCoverUrl(result.get().coverUrl());
+        }
+
+        if (manga.getCoverUrl() == null) {
+            mangaDexService.fetchCoverUrl(manga.getMangadexId()).ifPresent(manga::setCoverUrl);
         }
 
         Optional<MangaDexService.ChapterInfo> chapterOpt =

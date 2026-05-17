@@ -78,6 +78,17 @@ h1 {
   font-size: 1rem;
   color: #111;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.manga-cover {
+  width: 40px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 3px;
+  flex-shrink: 0;
 }
 
 .manga-actions {
