@@ -8,6 +8,7 @@ export interface Manga {
   title: string;
   coverUrl: string | null;
   latestChapter: string | null;
+  lastReadChapter: string | null;
   nextCheckDate: string | null;
 }
 
@@ -27,6 +28,10 @@ export class MangaService {
 
   check(id: number): Observable<Manga> {
     return this.http.post<Manga>(`${this.apiUrl}/${id}/check`, null);
+  }
+
+  markRead(id: number, chapter: string): Observable<Manga> {
+    return this.http.patch<Manga>(`${this.apiUrl}/${id}/read`, { chapter });
   }
 
   remove(id: number): Observable<void> {

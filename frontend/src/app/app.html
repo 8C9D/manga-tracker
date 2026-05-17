@@ -16,21 +16,27 @@
 
   <ul class="manga-list" *ngIf="sortedMangaList().length > 0; else empty">
     <li *ngFor="let manga of sortedMangaList()">
-      <div class="manga-card">
-        <img *ngIf="manga.coverUrl" [src]="manga.coverUrl" [alt]="manga.title" class="manga-cover" referrerpolicy="no-referrer" />
-        <div class="manga-info">
-          <span class="manga-title">{{ manga.title }}</span>
-          <div class="manga-meta">
-            <span *ngIf="manga.latestChapter; else noChapter">Ch. {{ manga.latestChapter }}</span>
-            <ng-template #noChapter><span class="pending">No chapter yet</span></ng-template>
+      <img *ngIf="manga.coverUrl" [src]="manga.coverUrl" [alt]="manga.title" class="manga-cover" referrerpolicy="no-referrer" />
+      <div class="manga-info">
+        <span class="manga-title">{{ manga.title }}</span>
+        <div class="manga-meta">
+          <span *ngIf="manga.latestChapter; else noChapter">Ch. {{ manga.latestChapter }}</span>
+          <ng-template #noChapter><span class="pending">No chapter yet</span></ng-template>
+          <span class="separator">·</span>
+          <span *ngIf="manga.nextCheckDate; else noCheck">Next check: {{ daysUntil(manga.nextCheckDate) }}</span>
+          <ng-template #noCheck><span class="pending">Check pending</span></ng-template>
+          <ng-container *ngIf="chaptersBehind(manga.latestChapter, manga.lastReadChapter) as behind">
             <span class="separator">·</span>
-            <span *ngIf="manga.nextCheckDate; else noCheck">Next check: {{ daysUntil(manga.nextCheckDate) }}</span>
-            <ng-template #noCheck><span class="pending">Check pending</span></ng-template>
-          </div>
+            <span class="behind">{{ behind }} chapter{{ behind === 1 ? '' : 's' }} behind</span>
+          </ng-container>
         </div>
       </div>
       <div class="manga-actions">
         <button class="remove-btn" (click)="removeManga(manga.id)">Remove</button>
+        <button class="mark-read-btn" (click)="markRead(manga)"
+          [disabled]="!manga.latestChapter || markingReadId() === manga.id || manga.lastReadChapter === manga.latestChapter">
+          {{ markingReadId() === manga.id ? 'Saving...' : 'Mark read' }}
+        </button>
         <button class="check-btn" (click)="checkNow(manga.id)" [disabled]="checkingId() === manga.id">
           {{ checkingId() === manga.id ? 'Checking...' : 'Check now' }}
         </button>

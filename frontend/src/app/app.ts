@@ -22,6 +22,7 @@ export class App implements OnInit {
   newTitle = '';
   errorMessage = signal('');
   checkingId = signal<number | null>(null);
+  markingReadId = signal<number | null>(null);
 
   constructor(private mangaService: MangaService) {}
 
@@ -63,6 +64,24 @@ export class App implements OnInit {
         this.errorMessage.set('Check failed.');
         this.checkingId.set(null);
       }
+    });
+  }
+
+  chaptersBehind(latest: string | null, lastRead: string | null): number {
+    if (!latest || !lastRead) return 0;
+    const diff = parseFloat(latest) - parseFloat(lastRead);
+    return diff > 0 ? Math.floor(diff) : 0;
+  }
+
+  markRead(manga: Manga): void {
+    if (!manga.latestChapter) return;
+    this.markingReadId.set(manga.id);
+    this.mangaService.markRead(manga.id, manga.latestChapter).subscribe({
+      next: (updated) => {
+        this.mangaList.update(list => list.map(m => m.id === manga.id ? updated : m));
+        this.markingReadId.set(null);
+      },
+      error: () => this.markingReadId.set(null)
     });
   }
 

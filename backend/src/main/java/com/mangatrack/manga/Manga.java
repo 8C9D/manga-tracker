@@ -18,6 +18,7 @@ public class Manga {
     private String mangadexId;
     private String coverUrl;
     private String latestChapter;
+    private String lastReadChapter;
     private LocalDate nextCheckDate;
 
     @Enumerated(EnumType.STRING)
@@ -42,6 +43,9 @@ public class Manga {
 
     public String getLatestChapter() { return latestChapter; }
     public void setLatestChapter(String latestChapter) { this.latestChapter = latestChapter; }
+
+    public String getLastReadChapter() { return lastReadChapter; }
+    public void setLastReadChapter(String lastReadChapter) { this.lastReadChapter = lastReadChapter; }
 
     public LocalDate getNextCheckDate() { return nextCheckDate; }
     public void setNextCheckDate(LocalDate nextCheckDate) { this.nextCheckDate = nextCheckDate; }

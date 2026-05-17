@@ -10,7 +10,7 @@ body {
 }
 
 .container {
-  max-width: 600px;
+  max-width: 900px;
   margin: 60px auto;
   padding: 0 16px;
 }
@@ -64,20 +64,12 @@ h1 {
 }
 
 .manga-list li {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.manga-card {
-  flex: 1;
   background: #fff;
   padding: 14px 16px;
   border-radius: 8px;
   border: 1px solid #e5e7eb;
   font-size: 1rem;
   color: #111;
-  min-width: 0;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -96,19 +88,19 @@ h1 {
   gap: 8px;
   align-items: center;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .manga-info {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
+  flex: 1;
 }
 
 .manga-title {
   font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .manga-meta {
@@ -126,6 +118,33 @@ h1 {
 .pending {
   color: #9ca3af;
   font-style: italic;
+}
+
+.behind {
+  color: #d97706;
+  font-weight: 500;
+}
+
+.mark-read-btn {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  background: transparent;
+  color: #16a34a;
+  border: 1px solid #16a34a;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+
+.mark-read-btn:hover:not(:disabled) {
+  background: #16a34a;
+  color: #fff;
+}
+
+.mark-read-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .check-btn {

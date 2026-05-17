@@ -66,6 +66,14 @@ public class MangaController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
+    @PatchMapping("/{id}/read")
+    public Manga markRead(@PathVariable Long id, @RequestBody MarkReadRequest request) {
+        Manga manga = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        manga.setLastReadChapter(request.chapter());
+        return repository.save(manga);
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void remove(@PathVariable Long id) {
@@ -73,4 +81,5 @@ public class MangaController {
     }
 
     public record MangaRequest(String title) {}
+    public record MarkReadRequest(String chapter) {}
 }
