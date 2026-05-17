@@ -11,14 +11,28 @@ import { Manga, MangaSearchResult, MangaService } from './manga.service';
 })
 export class App implements OnInit {
   mangaList = signal<Manga[]>([]);
-  sortedMangaList = computed(() =>
-    [...this.mangaList()].sort((a, b) => {
-      if (!a.nextCheckDate && !b.nextCheckDate) return 0;
-      if (!a.nextCheckDate) return -1;
-      if (!b.nextCheckDate) return 1;
-      return a.nextCheckDate < b.nextCheckDate ? -1 : a.nextCheckDate > b.nextCheckDate ? 1 : 0;
-    })
-  );
+  sortBy = signal<string>('next-check');
+  sortedMangaList = computed(() => {
+    const list = [...this.mangaList()];
+    switch (this.sortBy()) {
+      case 'title':
+        return list.sort((a, b) => a.title.localeCompare(b.title));
+      case 'date-added':
+        return list.sort((a, b) => b.id - a.id);
+      case 'chapters-behind':
+        return list.sort((a, b) =>
+          this.chaptersBehind(b.latestChapter, b.lastReadChapter) -
+          this.chaptersBehind(a.latestChapter, a.lastReadChapter)
+        );
+      default: // next-check
+        return list.sort((a, b) => {
+          if (!a.nextCheckDate && !b.nextCheckDate) return 0;
+          if (!a.nextCheckDate) return -1;
+          if (!b.nextCheckDate) return 1;
+          return a.nextCheckDate < b.nextCheckDate ? -1 : a.nextCheckDate > b.nextCheckDate ? 1 : 0;
+        });
+    }
+  });
   newTitle = '';
   errorMessage = signal('');
   checkingId = signal<number | null>(null);

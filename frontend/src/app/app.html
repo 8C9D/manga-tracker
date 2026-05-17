@@ -35,12 +35,20 @@
   <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
 
   <div class="list-header" *ngIf="sortedMangaList().length > 0">
-    <button class="check-all-btn" (click)="checkAll()" [disabled]="checkingAll()">
-      {{ checkingAll() ? 'Checking...' : 'Check all' }}
-    </button>
-    <button class="remove-all-btn" (click)="removeAll()" [disabled]="removingAll()">
-      {{ removingAll() ? 'Removing...' : 'Remove all' }}
-    </button>
+    <select class="sort-select" [value]="sortBy()" (change)="sortBy.set($any($event.target).value)">
+      <option value="next-check">Next check date</option>
+      <option value="title">Title (A–Z)</option>
+      <option value="date-added">Date added</option>
+      <option value="chapters-behind">Chapters behind</option>
+    </select>
+    <div class="list-header-actions">
+      <button class="check-all-btn" (click)="checkAll()" [disabled]="checkingAll()">
+        {{ checkingAll() ? 'Checking...' : 'Check all' }}
+      </button>
+      <button class="remove-all-btn" (click)="removeAll()" [disabled]="removingAll()">
+        {{ removingAll() ? 'Removing...' : 'Remove all' }}
+      </button>
+    </div>
   </div>
 
   <ul class="manga-list" *ngIf="sortedMangaList().length > 0; else empty">
