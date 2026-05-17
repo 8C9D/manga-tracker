@@ -16,20 +16,24 @@
 
   <ul class="manga-list" *ngIf="mangaList().length > 0; else empty">
     <li *ngFor="let manga of mangaList()">
-      <div class="manga-info">
-        <span class="manga-title">{{ manga.title }}</span>
-        <div class="manga-meta">
-          <span *ngIf="manga.latestChapter; else noChapter">Ch. {{ manga.latestChapter }}</span>
-          <ng-template #noChapter><span class="pending">No chapter yet</span></ng-template>
-          <span class="separator">·</span>
-          <span *ngIf="manga.nextCheckDate; else noCheck">Next check: {{ manga.nextCheckDate }}</span>
-          <ng-template #noCheck><span class="pending">Check pending</span></ng-template>
+      <div class="manga-card">
+        <div class="manga-info">
+          <span class="manga-title">{{ manga.title }}</span>
+          <div class="manga-meta">
+            <span *ngIf="manga.latestChapter; else noChapter">Ch. {{ manga.latestChapter }}</span>
+            <ng-template #noChapter><span class="pending">No chapter yet</span></ng-template>
+            <span class="separator">·</span>
+            <span *ngIf="manga.nextCheckDate; else noCheck">Next check: {{ manga.nextCheckDate }}</span>
+            <ng-template #noCheck><span class="pending">Check pending</span></ng-template>
+          </div>
         </div>
       </div>
-      <button class="check-btn" (click)="checkNow(manga.id)" [disabled]="checkingId() === manga.id">
-        {{ checkingId() === manga.id ? 'Checking...' : 'Check now' }}
-      </button>
-      <button class="remove-btn" (click)="removeManga(manga.id)">Remove</button>
+      <div class="manga-actions">
+        <button class="remove-btn" (click)="removeManga(manga.id)">Remove</button>
+        <button class="check-btn" (click)="checkNow(manga.id)" [disabled]="checkingId() === manga.id">
+          {{ checkingId() === manga.id ? 'Checking...' : 'Check now' }}
+        </button>
+      </div>
     </li>
   </ul>
 
