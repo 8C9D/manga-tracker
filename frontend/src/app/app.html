@@ -41,14 +41,14 @@
         </div>
       </div>
       <div class="manga-actions">
-        <button class="remove-btn" (click)="removeManga(manga.id)">Remove</button>
+        <button class="check-btn" (click)="checkNow(manga.id)" [disabled]="checkingId() === manga.id">
+          {{ checkingId() === manga.id ? 'Checking...' : 'Check now' }}
+        </button>
         <button class="mark-read-btn" (click)="markRead(manga)"
           [disabled]="!manga.latestChapter || markingReadId() === manga.id || manga.lastReadChapter === manga.latestChapter">
           {{ markingReadId() === manga.id ? 'Saving...' : 'Mark read' }}
         </button>
-        <button class="check-btn" (click)="checkNow(manga.id)" [disabled]="checkingId() === manga.id">
-          {{ checkingId() === manga.id ? 'Checking...' : 'Check now' }}
-        </button>
+        <button class="remove-btn" (click)="removeManga(manga.id)">Remove</button>
       </div>
     </li>
   </ul>
