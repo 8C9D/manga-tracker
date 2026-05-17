@@ -64,7 +64,8 @@ export class App implements OnInit {
   }
 
   confirmAdd(result: MangaSearchResult): void {
-    this.mangaService.add(result.title, result.mangadexId, result.coverUrl).subscribe({
+    const title = this.newTitle.trim();
+    this.mangaService.add(title, result.mangadexId, result.coverUrl).subscribe({
       next: (manga) => {
         this.mangaList.update(list => [...list, manga]);
         this.searchResults.set([]);
@@ -72,7 +73,7 @@ export class App implements OnInit {
         this.errorMessage.set('');
       },
       error: (err) => this.errorMessage.set(
-        err.status === 409 ? `"${result.title}" is already being tracked.` : 'Failed to add manga.'
+        err.status === 409 ? `"${title}" is already being tracked.` : 'Failed to add manga.'
       )
     });
   }
