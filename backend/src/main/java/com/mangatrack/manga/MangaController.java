@@ -81,6 +81,13 @@ public class MangaController {
         return repository.save(manga);
     }
 
+    @DeleteMapping
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeAll() {
+        subscriptionRepository.deleteAll();
+        repository.deleteAll();
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void remove(@PathVariable Long id) {

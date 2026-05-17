@@ -38,6 +38,12 @@ export class MangaService {
     return this.http.patch<Manga>(`${this.apiUrl}/${id}/read`, { chapter });
   }
 
+  removeAll(): Observable<void> {
+    return this.http.delete(this.apiUrl, { observe: 'response' }).pipe(
+      map(() => void 0)
+    );
+  }
+
   remove(id: number): Observable<void> {
     return this.http.delete(`${this.apiUrl}/${id}`, { observe: 'response' }).pipe(
       map(() => void 0)

@@ -18,6 +18,9 @@
     <button class="check-all-btn" (click)="checkAll()" [disabled]="checkingAll()">
       {{ checkingAll() ? 'Checking...' : 'Check all' }}
     </button>
+    <button class="remove-all-btn" (click)="removeAll()" [disabled]="removingAll()">
+      {{ removingAll() ? 'Removing...' : 'Remove all' }}
+    </button>
   </div>
 
   <ul class="manga-list" *ngIf="sortedMangaList().length > 0; else empty">

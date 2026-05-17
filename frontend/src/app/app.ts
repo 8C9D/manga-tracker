@@ -24,6 +24,7 @@ export class App implements OnInit {
   checkingId = signal<number | null>(null);
   checkingAll = signal(false);
   markingReadId = signal<number | null>(null);
+  removingAll = signal(false);
 
   constructor(private mangaService: MangaService) {}
 
@@ -111,6 +112,21 @@ export class App implements OnInit {
     if (diff === 0) return 'today';
     if (diff === 1) return 'tomorrow';
     return `in ${diff} days`;
+  }
+
+  removeAll(): void {
+    if (!confirm('Remove all manga?')) return;
+    this.removingAll.set(true);
+    this.mangaService.removeAll().subscribe({
+      next: () => {
+        this.mangaList.set([]);
+        this.removingAll.set(false);
+      },
+      error: () => {
+        this.errorMessage.set('Failed to remove all manga.');
+        this.removingAll.set(false);
+      }
+    });
   }
 
   removeManga(id: number): void {
