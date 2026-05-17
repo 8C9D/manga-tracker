@@ -24,6 +24,10 @@ export class MangaService {
     return this.http.post<Manga>(this.apiUrl, { title });
   }
 
+  check(id: number): Observable<Manga> {
+    return this.http.post<Manga>(`${this.apiUrl}/${id}/check`, null);
+  }
+
   remove(id: number): Observable<void> {
     return this.http.delete(`${this.apiUrl}/${id}`, { observe: 'response' }).pipe(
       map(() => void 0)

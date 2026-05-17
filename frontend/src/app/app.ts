@@ -13,6 +13,7 @@ export class App implements OnInit {
   mangaList = signal<Manga[]>([]);
   newTitle = '';
   errorMessage = signal('');
+  checkingId = signal<number | null>(null);
 
   constructor(private mangaService: MangaService) {}
 
@@ -39,6 +40,21 @@ export class App implements OnInit {
       error: (err) => this.errorMessage.set(
         err.status === 409 ? `"${title}" is already being tracked.` : 'Failed to add manga.'
       )
+    });
+  }
+
+  checkNow(id: number): void {
+    this.checkingId.set(id);
+    this.mangaService.check(id).subscribe({
+      next: (updated) => {
+        this.mangaList.update(list => list.map(m => m.id === id ? updated : m));
+        this.checkingId.set(null);
+        this.errorMessage.set('');
+      },
+      error: () => {
+        this.errorMessage.set('Check failed.');
+        this.checkingId.set(null);
+      }
     });
   }
 

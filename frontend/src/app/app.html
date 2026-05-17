@@ -26,6 +26,9 @@
           <ng-template #noCheck><span class="pending">Check pending</span></ng-template>
         </div>
       </div>
+      <button class="check-btn" (click)="checkNow(manga.id)" [disabled]="checkingId() === manga.id">
+        {{ checkingId() === manga.id ? 'Checking...' : 'Check now' }}
+      </button>
       <button class="remove-btn" (click)="removeManga(manga.id)">Remove</button>
     </li>
   </ul>

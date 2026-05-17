@@ -18,16 +18,19 @@ public class MangaController {
     private final MangaRepository repository;
     private final UserRepository userRepository;
     private final SubscriptionRepository subscriptionRepository;
+    private final MangaCheckerService mangaCheckerService;
 
     @Value("${app.default-user.phone}")
     private String defaultUserPhone;
 
     public MangaController(MangaRepository repository,
                            UserRepository userRepository,
-                           SubscriptionRepository subscriptionRepository) {
+                           SubscriptionRepository subscriptionRepository,
+                           MangaCheckerService mangaCheckerService) {
         this.repository = repository;
         this.userRepository = userRepository;
         this.subscriptionRepository = subscriptionRepository;
+        this.mangaCheckerService = mangaCheckerService;
     }
 
     @GetMapping
@@ -52,6 +55,15 @@ public class MangaController {
         });
 
         return manga;
+    }
+
+    @PostMapping("/{id}/check")
+    public Manga checkNow(@PathVariable Long id) {
+        Manga manga = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        mangaCheckerService.check(manga);
+        return repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
     @DeleteMapping("/{id}")
