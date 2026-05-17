@@ -17,7 +17,7 @@
   <ul class="manga-list" *ngIf="sortedMangaList().length > 0; else empty">
     <li *ngFor="let manga of sortedMangaList()">
       <div class="manga-card">
-        <img *ngIf="manga.coverUrl" [src]="manga.coverUrl" [alt]="manga.title" class="manga-cover" />
+        <img *ngIf="manga.coverUrl" [src]="manga.coverUrl" [alt]="manga.title" class="manga-cover" referrerpolicy="no-referrer" />
         <div class="manga-info">
           <span class="manga-title">{{ manga.title }}</span>
           <div class="manga-meta">
