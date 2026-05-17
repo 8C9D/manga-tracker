@@ -229,22 +229,22 @@ h1 {
   font-size: 1rem;
   color: #111;
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: flex-start;
+  gap: 14px;
 }
 
 .manga-cover {
-  width: 40px;
-  height: 56px;
+  width: 64px;
+  height: 90px;
   object-fit: cover;
-  border-radius: 3px;
+  border-radius: 4px;
   flex-shrink: 0;
 }
 
 .manga-actions {
   display: flex;
-  gap: 8px;
-  align-items: center;
+  flex-direction: column;
+  gap: 6px;
   flex-shrink: 0;
   margin-left: auto;
 }
@@ -292,7 +292,7 @@ h1 {
   border-radius: 5px;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
-  flex-shrink: 0;
+  width: 100%;
 }
 
 .mark-read-btn:hover:not(:disabled) {
@@ -314,7 +314,7 @@ h1 {
   border-radius: 5px;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
-  flex-shrink: 0;
+  width: 100%;
 }
 
 .check-btn:hover:not(:disabled) {
@@ -336,7 +336,7 @@ h1 {
   border-radius: 5px;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
-  flex-shrink: 0;
+  width: 100%;
 }
 
 .remove-btn:hover {
