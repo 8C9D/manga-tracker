@@ -58,6 +58,18 @@ export class App implements OnInit {
     });
   }
 
+  daysUntil(date: string | null): string {
+    if (!date) return '';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(date + 'T00:00:00');
+    const diff = Math.round((target.getTime() - today.getTime()) / 86400000);
+    if (diff < 0) return 'overdue';
+    if (diff === 0) return 'today';
+    if (diff === 1) return 'tomorrow';
+    return `in ${diff} days`;
+  }
+
   removeManga(id: number): void {
     this.mangaService.remove(id).subscribe({
       next: () => this.mangaList.update(list => list.filter(m => m.id !== id)),

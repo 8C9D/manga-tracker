@@ -23,7 +23,7 @@
             <span *ngIf="manga.latestChapter; else noChapter">Ch. {{ manga.latestChapter }}</span>
             <ng-template #noChapter><span class="pending">No chapter yet</span></ng-template>
             <span class="separator">·</span>
-            <span *ngIf="manga.nextCheckDate; else noCheck">Next check: {{ manga.nextCheckDate }}</span>
+            <span *ngIf="manga.nextCheckDate; else noCheck">Next check: {{ daysUntil(manga.nextCheckDate) }}</span>
             <ng-template #noCheck><span class="pending">Check pending</span></ng-template>
           </div>
         </div>
