@@ -1,15 +1,17 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, computed, effect, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Manga, MangaSearchResult, MangaService } from './manga.service';
+import { AuthService } from './auth.service';
+import { LoginComponent } from './login.component';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LoginComponent],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
-export class App implements OnInit {
+export class App {
   mangaList = signal<Manga[]>([]);
   sortBy = signal<string>('next-check');
   sortedMangaList = computed(() => {
@@ -43,17 +45,32 @@ export class App implements OnInit {
   isSearching = signal(false);
   showAddAnyway = signal(false);
 
-  constructor(private mangaService: MangaService) {}
-
-  ngOnInit(): void {
-    this.loadManga();
+  constructor(private mangaService: MangaService, public auth: AuthService) {
+    effect(() => {
+      if (this.auth.isAuthenticated()) {
+        this.loadManga();
+      } else {
+        this.mangaList.set([]);
+        this.errorMessage.set('');
+        this.searchResults.set([]);
+        this.newTitle = '';
+      }
+    });
   }
 
   loadManga(): void {
     this.mangaService.list().subscribe({
       next: (data) => this.mangaList.set(data),
-      error: () => this.errorMessage.set('Failed to load manga. Is the backend running?')
+      error: (err) => {
+        if (err?.status !== 401) {
+          this.errorMessage.set('Failed to load manga. Is the backend running?');
+        }
+      }
     });
+  }
+
+  logout(): void {
+    this.auth.logout();
   }
 
   addManga(): void {

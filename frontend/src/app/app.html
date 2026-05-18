@@ -1,5 +1,9 @@
+@if (auth.isAuthenticated()) {
 <div class="container">
-  <h1>Manga Tracker</h1>
+  <div class="app-header">
+    <h1>Manga Tracker</h1>
+    <button class="logout-btn" (click)="logout()">Sign out</button>
+  </div>
 
   <form class="add-form" (ngSubmit)="addManga()">
     <input
@@ -93,3 +97,6 @@
     <p class="empty">No manga tracked yet. Add one above!</p>
   </ng-template>
 </div>
+} @else {
+  <app-login />
+}

@@ -17,8 +17,32 @@ body {
 
 h1 {
   font-size: 2rem;
-  margin-bottom: 24px;
   color: #1a1a1a;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 12px;
+}
+
+.logout-btn {
+  padding: 7px 14px;
+  font-size: 0.85rem;
+  background: transparent;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.logout-btn:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  color: #111;
 }
 
 .add-form {

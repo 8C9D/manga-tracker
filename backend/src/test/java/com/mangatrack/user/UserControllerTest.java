@@ -1,10 +1,15 @@
 package com.mangatrack.user;
 
+import com.mangatrack.SecurityConfig;
+import com.mangatrack.WebConfig;
 import com.mangatrack.manga.MangaRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -19,6 +24,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserController.class)
+@Import({SecurityConfig.class, WebConfig.class})
+@TestPropertySource(properties = {
+        "app.auth.username=testuser",
+        "app.auth.password=testpass"
+})
 class UserControllerTest {
 
     @Autowired MockMvc mvc;
@@ -27,6 +37,13 @@ class UserControllerTest {
     @MockitoBean SubscriptionRepository subscriptionRepository;
     @MockitoBean MangaRepository mangaRepository;
 
+    @Test
+    void list_withoutAuth_returns401() throws Exception {
+        mvc.perform(get("/api/users"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @WithMockUser
     @Test
     void list_doesNotExposePhoneNumber() throws Exception {
         User u = new User("Arthur", "+12025551234");
@@ -38,6 +55,7 @@ class UserControllerTest {
                 .andExpect(jsonPath("$[0].phoneNumber").doesNotExist());
     }
 
+    @WithMockUser
     @Test
     void create_validUser_returns201DtoWithoutPhoneNumber() throws Exception {
         when(userRepository.save(any(User.class))).thenReturn(new User("Bob", "+12025551234"));
@@ -50,6 +68,7 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.phoneNumber").doesNotExist());
     }
 
+    @WithMockUser
     @Test
     void create_blankName_returns400() throws Exception {
         mvc.perform(post("/api/users")
@@ -59,6 +78,7 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.fieldErrors.name").exists());
     }
 
+    @WithMockUser
     @Test
     void create_invalidPhoneFormat_returns400() throws Exception {
         mvc.perform(post("/api/users")
@@ -68,6 +88,7 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.fieldErrors.phoneNumber").exists());
     }
 
+    @WithMockUser
     @Test
     void subscribe_missingMangaId_returns400() throws Exception {
         when(userRepository.existsById(1L)).thenReturn(true);
