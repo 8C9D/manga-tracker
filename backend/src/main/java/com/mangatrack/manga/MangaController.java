@@ -3,6 +3,9 @@ package com.mangatrack.manga;
 import com.mangatrack.user.Subscription;
 import com.mangatrack.user.SubscriptionRepository;
 import com.mangatrack.user.UserRepository;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -37,8 +40,8 @@ public class MangaController {
     }
 
     @GetMapping
-    public List<Manga> list() {
-        return repository.findAll();
+    public List<MangaDto> list() {
+        return repository.findAll().stream().map(MangaDto::from).toList();
     }
 
     @GetMapping("/search")
@@ -50,7 +53,7 @@ public class MangaController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Manga add(@RequestBody MangaRequest request) {
+    public MangaDto add(@Valid @RequestBody MangaRequest request) {
         Manga manga;
         try {
             Manga m = new Manga(request.title());
@@ -68,31 +71,31 @@ public class MangaController {
             }
         });
 
-        return manga;
+        return MangaDto.from(manga);
     }
 
     @PostMapping("/check-all")
-    public List<Manga> checkAll() {
+    public List<MangaDto> checkAll() {
         List<Manga> all = repository.findAll();
         for (Manga manga : all) mangaCheckerService.check(manga);
-        return repository.findAll();
+        return repository.findAll().stream().map(MangaDto::from).toList();
     }
 
     @PostMapping("/{id}/check")
-    public Manga checkNow(@PathVariable Long id) {
+    public MangaDto checkNow(@PathVariable Long id) {
         Manga manga = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         mangaCheckerService.check(manga);
-        return repository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        return MangaDto.from(repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
     }
 
     @PatchMapping("/{id}/read")
-    public Manga markRead(@PathVariable Long id, @RequestBody MarkReadRequest request) {
+    public MangaDto markRead(@PathVariable Long id, @Valid @RequestBody MarkReadRequest request) {
         Manga manga = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         manga.setLastReadChapter(request.chapter());
-        return repository.save(manga);
+        return MangaDto.from(repository.save(manga));
     }
 
     @DeleteMapping
@@ -108,7 +111,14 @@ public class MangaController {
         repository.deleteById(id);
     }
 
-    public record MangaRequest(String title, String mangadexId, String coverUrl, boolean noSource) {}
+    public record MangaRequest(
+            @NotBlank @Size(max = 255) String title,
+            @Size(max = 64) String mangadexId,
+            @Size(max = 1000) String coverUrl,
+            boolean noSource
+    ) {}
+
     public record MangaSearchDto(String mangadexId, String title, String coverUrl) {}
-    public record MarkReadRequest(String chapter) {}
+
+    public record MarkReadRequest(@NotBlank @Size(max = 20) String chapter) {}
 }

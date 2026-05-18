@@ -1,6 +1,11 @@
 package com.mangatrack.user;
 
 import com.mangatrack.manga.MangaRepository;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -25,15 +30,15 @@ public class UserController {
     }
 
     @GetMapping
-    public List<User> list() {
-        return userRepository.findAll();
+    public List<UserDto> list() {
+        return userRepository.findAll().stream().map(UserDto::from).toList();
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public User create(@RequestBody UserRequest request) {
+    public UserDto create(@Valid @RequestBody UserRequest request) {
         try {
-            return userRepository.save(new User(request.name(), request.phoneNumber()));
+            return UserDto.from(userRepository.save(new User(request.name(), request.phoneNumber())));
         } catch (DataIntegrityViolationException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "A user with that phone number already exists");
@@ -47,15 +52,17 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/subscriptions")
-    public List<Subscription> getSubscriptions(@PathVariable Long userId) {
+    public List<SubscriptionDto> getSubscriptions(@PathVariable Long userId) {
         requireUser(userId);
-        return subscriptionRepository.findByUserId(userId);
+        return subscriptionRepository.findByUserId(userId).stream()
+                .map(SubscriptionDto::from)
+                .toList();
     }
 
     @PostMapping("/{userId}/subscriptions")
     @ResponseStatus(HttpStatus.CREATED)
-    public Subscription subscribe(@PathVariable Long userId,
-                                  @RequestBody SubscriptionRequest request) {
+    public SubscriptionDto subscribe(@PathVariable Long userId,
+                                     @Valid @RequestBody SubscriptionRequest request) {
         requireUser(userId);
         if (!mangaRepository.existsById(request.mangaId())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Manga not found");
@@ -64,7 +71,7 @@ public class UserController {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Already subscribed to this manga");
         }
-        return subscriptionRepository.save(new Subscription(userId, request.mangaId()));
+        return SubscriptionDto.from(subscriptionRepository.save(new Subscription(userId, request.mangaId())));
     }
 
     @DeleteMapping("/{userId}/subscriptions/{mangaId}")
@@ -80,6 +87,11 @@ public class UserController {
         }
     }
 
-    public record UserRequest(String name, String phoneNumber) {}
-    public record SubscriptionRequest(Long mangaId) {}
+    public record UserRequest(
+            @NotBlank @Size(max = 100) String name,
+            @NotBlank @Pattern(regexp = "^\\+[1-9]\\d{1,14}$",
+                    message = "must be E.164 format (e.g. +14155551234)") String phoneNumber
+    ) {}
+
+    public record SubscriptionRequest(@NotNull Long mangaId) {}
 }
