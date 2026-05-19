@@ -1,12 +1,9 @@
 package com.mangatrack.manga;
 
-import com.mangatrack.user.Subscription;
-import com.mangatrack.user.SubscriptionRepository;
-import com.mangatrack.user.UserRepository;
+import com.mangatrack.user.SubscriptionService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -19,24 +16,18 @@ import java.util.List;
 public class MangaController {
 
     private final MangaRepository repository;
-    private final UserRepository userRepository;
-    private final SubscriptionRepository subscriptionRepository;
     private final MangaCheckerService mangaCheckerService;
     private final MangaDexService mangaDexService;
-
-    @Value("${app.default-user.phone}")
-    private String defaultUserPhone;
+    private final SubscriptionService subscriptionService;
 
     public MangaController(MangaRepository repository,
-                           UserRepository userRepository,
-                           SubscriptionRepository subscriptionRepository,
                            MangaCheckerService mangaCheckerService,
-                           MangaDexService mangaDexService) {
+                           MangaDexService mangaDexService,
+                           SubscriptionService subscriptionService) {
         this.repository = repository;
-        this.userRepository = userRepository;
-        this.subscriptionRepository = subscriptionRepository;
         this.mangaCheckerService = mangaCheckerService;
         this.mangaDexService = mangaDexService;
+        this.subscriptionService = subscriptionService;
     }
 
     @GetMapping
@@ -65,12 +56,7 @@ public class MangaController {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Already tracking \"" + request.title() + "\"");
         }
 
-        userRepository.findByPhoneNumber(defaultUserPhone).ifPresent(user -> {
-            if (!subscriptionRepository.existsByUserIdAndMangaId(user.getId(), manga.getId())) {
-                subscriptionRepository.save(new Subscription(user.getId(), manga.getId()));
-            }
-        });
-
+        subscriptionService.autoSubscribeDefaultUser(manga);
         return MangaDto.from(manga);
     }
 
@@ -101,7 +87,7 @@ public class MangaController {
     @DeleteMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void removeAll() {
-        subscriptionRepository.deleteAll();
+        subscriptionService.deleteAll();
         repository.deleteAll();
     }
 

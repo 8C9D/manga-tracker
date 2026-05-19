@@ -2,8 +2,7 @@ package com.mangatrack.manga;
 
 import com.mangatrack.SecurityConfig;
 import com.mangatrack.WebConfig;
-import com.mangatrack.user.SubscriptionRepository;
-import com.mangatrack.user.UserRepository;
+import com.mangatrack.user.SubscriptionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -15,7 +14,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
@@ -30,7 +28,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(MangaController.class)
 @Import({SecurityConfig.class, WebConfig.class})
 @TestPropertySource(properties = {
-        "app.default-user.phone=+10000000000",
         "app.auth.username=testuser",
         "app.auth.password=testpass"
 })
@@ -39,10 +36,9 @@ class MangaControllerTest {
     @Autowired MockMvc mvc;
 
     @MockitoBean MangaRepository mangaRepository;
-    @MockitoBean UserRepository userRepository;
-    @MockitoBean SubscriptionRepository subscriptionRepository;
     @MockitoBean MangaCheckerService mangaCheckerService;
     @MockitoBean MangaDexService mangaDexService;
+    @MockitoBean SubscriptionService subscriptionService;
 
     @Test
     void list_withoutAuth_returns401() throws Exception {
@@ -108,7 +104,6 @@ class MangaControllerTest {
     void add_validTitle_returns201WithDto() throws Exception {
         Manga saved = new Manga("Naruto");
         when(mangaRepository.save(any(Manga.class))).thenReturn(saved);
-        when(userRepository.findByPhoneNumber(any())).thenReturn(Optional.empty());
 
         mvc.perform(post("/api/manga")
                         .contentType(MediaType.APPLICATION_JSON)

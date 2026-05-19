@@ -1,9 +1,10 @@
 package com.mangatrack.manga;
 
-import com.mangatrack.notification.NotificationDispatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -18,27 +19,33 @@ public class MangaCheckerService {
 
     private final MangaDexService mangaDexService;
     private final MangaRepository repository;
-    private final NotificationDispatcher notificationDispatcher;
+    private final ApplicationEventPublisher eventPublisher;
 
     public MangaCheckerService(MangaDexService mangaDexService,
                                MangaRepository repository,
-                               NotificationDispatcher notificationDispatcher) {
+                               ApplicationEventPublisher eventPublisher) {
         this.mangaDexService = mangaDexService;
         this.repository = repository;
-        this.notificationDispatcher = notificationDispatcher;
+        this.eventPublisher = eventPublisher;
     }
 
+    @Transactional
     public void check(Manga manga) {
         if (manga.isNoSource()) return;
-        LocalDate today = LocalDate.now();
 
+        Optional<String> newChapter = updateMangaState(manga, LocalDate.now());
+        repository.save(manga);
+        newChapter.ifPresent(chapter ->
+                eventPublisher.publishEvent(new NewChapterEvent(manga, chapter)));
+    }
+
+    private Optional<String> updateMangaState(Manga manga, LocalDate today) {
         if (manga.getMangadexId() == null) {
             Optional<MangaDexService.MangaSearchResult> result = mangaDexService.findManga(manga.getTitle());
             if (result.isEmpty()) {
                 log.warn("'{}' not found on MangaDex, retrying tomorrow", manga.getTitle());
                 manga.setNextCheckDate(today.plusDays(1));
-                repository.save(manga);
-                return;
+                return Optional.empty();
             }
             manga.setMangadexId(result.get().id());
             manga.setCoverUrl(result.get().coverUrl());
@@ -50,32 +57,24 @@ public class MangaCheckerService {
 
         Optional<MangaDexService.ChapterInfo> chapterOpt =
                 mangaDexService.fetchLatestChapter(manga.getMangadexId());
-
         if (chapterOpt.isEmpty()) {
             log.warn("Chapter fetch failed for '{}', retrying tomorrow", manga.getTitle());
             manga.setNextCheckDate(today.plusDays(1));
-            repository.save(manga);
-            return;
+            return Optional.empty();
         }
 
         MangaDexService.ChapterInfo info = chapterOpt.get();
-
-        if (!Objects.equals(info.chapter(), manga.getLatestChapter())) {
-            log.info("New chapter {} for '{}'", info.chapter(), manga.getTitle());
-            String newChapter = info.chapter();
-            manga.setLatestChapter(newChapter);
-            manga.setUpdateDayOfWeek(info.publishedAt().getDayOfWeek());
-            manga.setNextCheckDate(today.plusDays(7));
-            repository.save(manga);
-            notificationDispatcher.dispatch(manga, newChapter);
-            return;
-        } else {
+        if (Objects.equals(info.chapter(), manga.getLatestChapter())) {
             log.info("No new chapter for '{}' (still ch {})", manga.getTitle(), manga.getLatestChapter());
             manga.setNextCheckDate(computeNextCheckDate(today, manga.getUpdateDayOfWeek()));
+            return Optional.empty();
         }
 
-        repository.save(manga);
-        return;
+        log.info("New chapter {} for '{}'", info.chapter(), manga.getTitle());
+        manga.setLatestChapter(info.chapter());
+        manga.setUpdateDayOfWeek(info.publishedAt().getDayOfWeek());
+        manga.setNextCheckDate(today.plusDays(7));
+        return Optional.of(info.chapter());
     }
 
     private LocalDate computeNextCheckDate(LocalDate today, DayOfWeek updateDay) {
