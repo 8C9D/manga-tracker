@@ -136,14 +136,18 @@ export class App {
   checkAll(): void {
     this.checkingAll.set(true);
     this.mangaService.checkAll().subscribe({
-      next: (list) => {
-        this.mangaList.set(list);
+      next: () => {
         this.checkingAll.set(false);
         this.errorMessage.set('');
+        this.loadManga();
       },
-      error: () => {
-        this.errorMessage.set('Check all failed.');
+      error: (err) => {
         this.checkingAll.set(false);
+        if (err?.status === 409) {
+          this.errorMessage.set('A check is already in progress.');
+        } else {
+          this.errorMessage.set('Check all failed.');
+        }
       }
     });
   }

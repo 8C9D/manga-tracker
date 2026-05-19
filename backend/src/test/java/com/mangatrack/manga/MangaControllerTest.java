@@ -17,6 +17,7 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
@@ -39,6 +40,7 @@ class MangaControllerTest {
 
     @MockitoBean MangaRepository mangaRepository;
     @MockitoBean MangaCheckerService mangaCheckerService;
+    @MockitoBean MangaCheckOrchestrator mangaCheckOrchestrator;
     @MockitoBean MangaDexService mangaDexService;
     @MockitoBean SubscriptionService subscriptionService;
     @MockitoBean MangaService mangaService;
@@ -140,5 +142,32 @@ class MangaControllerTest {
         mvc.perform(delete("/api/manga"))
                 .andExpect(status().isNoContent());
         verify(mangaService).deleteAllManga();
+    }
+
+    @WithMockUser
+    @Test
+    void checkAll_whenAccepted_returns202AndDoesNotIterateMangaSynchronously() throws Exception {
+        when(mangaCheckOrchestrator.tryStartManualCheckAll()).thenReturn(true);
+
+        mvc.perform(post("/api/manga/check-all"))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.message", is("Check started")));
+
+        verify(mangaCheckOrchestrator).tryStartManualCheckAll();
+        // The controller must NOT do the per-manga loop on the request thread.
+        verify(mangaCheckerService, never()).check(any());
+        verify(mangaRepository, never()).findAll();
+    }
+
+    @WithMockUser
+    @Test
+    void checkAll_whenAlreadyRunning_returns409() throws Exception {
+        when(mangaCheckOrchestrator.tryStartManualCheckAll()).thenReturn(false);
+
+        mvc.perform(post("/api/manga/check-all"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message", is("A check is already in progress")));
+
+        verify(mangaCheckerService, never()).check(any());
     }
 }

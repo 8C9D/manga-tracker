@@ -6,10 +6,12 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/manga")
@@ -17,17 +19,20 @@ public class MangaController {
 
     private final MangaRepository repository;
     private final MangaCheckerService mangaCheckerService;
+    private final MangaCheckOrchestrator mangaCheckOrchestrator;
     private final MangaDexService mangaDexService;
     private final SubscriptionService subscriptionService;
     private final MangaService mangaService;
 
     public MangaController(MangaRepository repository,
                            MangaCheckerService mangaCheckerService,
+                           MangaCheckOrchestrator mangaCheckOrchestrator,
                            MangaDexService mangaDexService,
                            SubscriptionService subscriptionService,
                            MangaService mangaService) {
         this.repository = repository;
         this.mangaCheckerService = mangaCheckerService;
+        this.mangaCheckOrchestrator = mangaCheckOrchestrator;
         this.mangaDexService = mangaDexService;
         this.subscriptionService = subscriptionService;
         this.mangaService = mangaService;
@@ -64,10 +69,12 @@ public class MangaController {
     }
 
     @PostMapping("/check-all")
-    public List<MangaDto> checkAll() {
-        List<Manga> all = repository.findAll();
-        for (Manga manga : all) mangaCheckerService.check(manga);
-        return repository.findAll().stream().map(MangaDto::from).toList();
+    public ResponseEntity<Map<String, String>> checkAll() {
+        if (mangaCheckOrchestrator.tryStartManualCheckAll()) {
+            return ResponseEntity.accepted().body(Map.of("message", "Check started"));
+        }
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("message", "A check is already in progress"));
     }
 
     @PostMapping("/{id}/check")
