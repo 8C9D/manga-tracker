@@ -17,7 +17,9 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -36,6 +38,7 @@ class UserControllerTest {
     @MockitoBean UserRepository userRepository;
     @MockitoBean SubscriptionRepository subscriptionRepository;
     @MockitoBean MangaRepository mangaRepository;
+    @MockitoBean UserService userService;
 
     @Test
     void list_withoutAuth_returns401() throws Exception {
@@ -98,5 +101,13 @@ class UserControllerTest {
                         .content("{}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.mangaId").exists());
+    }
+
+    @WithMockUser
+    @Test
+    void delete_delegatesToUserService() throws Exception {
+        mvc.perform(delete("/api/users/7"))
+                .andExpect(status().isNoContent());
+        verify(userService).deleteUser(7L);
     }
 }

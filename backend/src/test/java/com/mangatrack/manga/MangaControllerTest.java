@@ -17,8 +17,10 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -39,6 +41,7 @@ class MangaControllerTest {
     @MockitoBean MangaCheckerService mangaCheckerService;
     @MockitoBean MangaDexService mangaDexService;
     @MockitoBean SubscriptionService subscriptionService;
+    @MockitoBean MangaService mangaService;
 
     @Test
     void list_withoutAuth_returns401() throws Exception {
@@ -121,5 +124,21 @@ class MangaControllerTest {
                         .content("{\"chapter\":\"\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.chapter").exists());
+    }
+
+    @WithMockUser
+    @Test
+    void remove_delegatesToMangaService() throws Exception {
+        mvc.perform(delete("/api/manga/42"))
+                .andExpect(status().isNoContent());
+        verify(mangaService).deleteManga(42L);
+    }
+
+    @WithMockUser
+    @Test
+    void removeAll_delegatesToMangaService() throws Exception {
+        mvc.perform(delete("/api/manga"))
+                .andExpect(status().isNoContent());
+        verify(mangaService).deleteAllManga();
     }
 }

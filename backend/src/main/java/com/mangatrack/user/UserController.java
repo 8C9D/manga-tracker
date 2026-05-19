@@ -20,13 +20,16 @@ public class UserController {
     private final UserRepository userRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final MangaRepository mangaRepository;
+    private final UserService userService;
 
     public UserController(UserRepository userRepository,
                           SubscriptionRepository subscriptionRepository,
-                          MangaRepository mangaRepository) {
+                          MangaRepository mangaRepository,
+                          UserService userService) {
         this.userRepository = userRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.mangaRepository = mangaRepository;
+        this.userService = userService;
     }
 
     @GetMapping
@@ -48,7 +51,7 @@ public class UserController {
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
-        userRepository.deleteById(id);
+        userService.deleteUser(id);
     }
 
     @GetMapping("/{userId}/subscriptions")

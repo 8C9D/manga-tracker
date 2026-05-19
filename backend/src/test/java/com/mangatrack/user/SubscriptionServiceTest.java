@@ -80,6 +80,18 @@ class SubscriptionServiceTest {
         verify(subscriptionRepository).deleteAll();
     }
 
+    @Test
+    void deleteAllForManga_delegatesToRepository() {
+        service.deleteAllForManga(42L);
+        verify(subscriptionRepository).deleteByMangaId(42L);
+    }
+
+    @Test
+    void deleteAllForUser_delegatesToRepository() {
+        service.deleteAllForUser(7L);
+        verify(subscriptionRepository).deleteByUserId(7L);
+    }
+
     private static User userWithId(long id) {
         User u = new User("Default", DEFAULT_PHONE);
         ReflectionTestUtils.setField(u, "id", id);

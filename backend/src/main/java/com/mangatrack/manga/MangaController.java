@@ -19,15 +19,18 @@ public class MangaController {
     private final MangaCheckerService mangaCheckerService;
     private final MangaDexService mangaDexService;
     private final SubscriptionService subscriptionService;
+    private final MangaService mangaService;
 
     public MangaController(MangaRepository repository,
                            MangaCheckerService mangaCheckerService,
                            MangaDexService mangaDexService,
-                           SubscriptionService subscriptionService) {
+                           SubscriptionService subscriptionService,
+                           MangaService mangaService) {
         this.repository = repository;
         this.mangaCheckerService = mangaCheckerService;
         this.mangaDexService = mangaDexService;
         this.subscriptionService = subscriptionService;
+        this.mangaService = mangaService;
     }
 
     @GetMapping
@@ -87,14 +90,13 @@ public class MangaController {
     @DeleteMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void removeAll() {
-        subscriptionService.deleteAll();
-        repository.deleteAll();
+        mangaService.deleteAllManga();
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void remove(@PathVariable Long id) {
-        repository.deleteById(id);
+        mangaService.deleteManga(id);
     }
 
     public record MangaRequest(

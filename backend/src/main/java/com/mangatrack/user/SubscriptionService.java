@@ -35,6 +35,16 @@ public class SubscriptionService {
     }
 
     @Transactional
+    public void deleteAllForManga(Long mangaId) {
+        subscriptionRepository.deleteByMangaId(mangaId);
+    }
+
+    @Transactional
+    public void deleteAllForUser(Long userId) {
+        subscriptionRepository.deleteByUserId(userId);
+    }
+
+    @Transactional
     public void deleteAll() {
         subscriptionRepository.deleteAll();
     }

@@ -10,4 +10,8 @@ public interface NotificationLogRepository extends JpaRepository<NotificationLog
     Optional<NotificationLog> findByUserIdAndMangaIdAndChapter(Long userId, Long mangaId, String chapter);
 
     List<NotificationLog> findByStatusAndAttemptsLessThan(NotificationStatus status, int maxAttempts);
+
+    void deleteByMangaId(Long mangaId);
+
+    void deleteByUserId(Long userId);
 }

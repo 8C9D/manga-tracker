@@ -14,4 +14,8 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
     Optional<Subscription> findByUserIdAndMangaId(Long userId, Long mangaId);
 
     boolean existsByUserIdAndMangaId(Long userId, Long mangaId);
+
+    void deleteByMangaId(Long mangaId);
+
+    void deleteByUserId(Long userId);
 }
