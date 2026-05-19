@@ -25,9 +25,26 @@ public class MangaUpdateScheduler {
     public void runDailyCheck() {
         LocalDate today = LocalDate.now();
         List<Manga> due = mangaRepository.findDueForCheck(today);
-        log.info("Daily check: {} manga due today ({})", due.size(), today);
+        log.info("Daily manga check starting for {}: {} due", today, due.size());
+
+        int succeeded = 0;
+        int failed = 0;
         for (Manga manga : due) {
-            checkerService.check(manga);
+            if (Thread.currentThread().isInterrupted()) {
+                int remaining = due.size() - succeeded - failed;
+                log.warn("Daily manga check interrupted; aborting with {} remaining", remaining);
+                break;
+            }
+            try {
+                checkerService.check(manga);
+                succeeded++;
+            } catch (Exception e) {
+                failed++;
+                log.error("Daily check failed for manga [id={}, title='{}']: {}",
+                        manga.getId(), manga.getTitle(), e.getMessage(), e);
+            }
         }
+        log.info("Daily manga check finished: {} total, {} succeeded, {} failed",
+                due.size(), succeeded, failed);
     }
 }
