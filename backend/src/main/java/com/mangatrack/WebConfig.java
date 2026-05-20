@@ -25,6 +25,9 @@ public class WebConfig {
                 .toList());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+        // Browsers only let JS read safelisted response headers cross-origin;
+        // surface Retry-After so the frontend can show 429 wait hints.
+        config.setExposedHeaders(List.of("Retry-After"));
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

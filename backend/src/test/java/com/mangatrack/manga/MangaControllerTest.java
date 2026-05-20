@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.Duration;
 import java.util.List;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -261,6 +262,21 @@ class MangaControllerTest {
 
         verify(mangaCheckOrchestrator, never()).tryStartManualCheckAll();
         verify(mangaCheckerService, never()).check(any());
+    }
+
+    @WithMockUser(username = "alice")
+    @Test
+    void checkAll_429_advertisesRetryAfterAsCorsExposedHeader() throws Exception {
+        // Cross-origin browsers can only read Retry-After if the backend lists it
+        // in Access-Control-Expose-Headers. Drive the CORS filter by sending Origin.
+        when(manualCheckRateLimiter.tryAcquire("alice"))
+                .thenReturn(ManualCheckRateLimiter.Result.denied(Duration.ofMinutes(3)));
+
+        mvc.perform(post("/api/manga/check-all").header("Origin", "http://localhost:4200"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().string("Retry-After", "180"))
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:4200"))
+                .andExpect(header().string("Access-Control-Expose-Headers", containsString("Retry-After")));
     }
 
     @WithMockUser(username = "alice")
