@@ -72,6 +72,31 @@ Required env vars (see `application.properties` for defaults):
 - `DEFAULT_USER_PHONE`
 - `APP_AUTH_USERNAME`, `APP_AUTH_PASSWORD` (required in `prod`; have dev defaults otherwise)
 
+## Health endpoints
+
+Three probes are exposed under `/actuator/health` (all public; details and
+component names are suppressed via `show-details=never` and
+`show-components=never`):
+
+| Endpoint                       | Meaning                                                  | Includes DB? |
+|--------------------------------|----------------------------------------------------------|--------------|
+| `/actuator/health`             | Aggregate app health                                     | yes          |
+| `/actuator/health/liveness`    | JVM/process is alive — has it crashed or wedged?         | no           |
+| `/actuator/health/readiness`   | App can serve API traffic — including the database       | yes          |
+
+Liveness intentionally excludes the database: a transient DB outage should not
+kill the JVM (a restart would not help). Readiness includes the database via
+`management.endpoint.health.group.readiness.include=readinessState,db`, so a
+load balancer can drain traffic away from an instance whose DB is unhealthy.
+
+### Railway healthcheck recommendation
+
+Railway's healthcheck restarts the container on repeated failures, so it
+behaves as a liveness probe. Point it at **`/actuator/health/liveness`** to
+avoid restart loops during MySQL maintenance or transient connectivity issues.
+Switch to `/actuator/health/readiness` only if Railway adds true
+routing-vs-restart separation.
+
 ## Tests
 
 ```bash

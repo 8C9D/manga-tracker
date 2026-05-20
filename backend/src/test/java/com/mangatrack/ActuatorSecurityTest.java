@@ -2,11 +2,14 @@ package com.mangatrack;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.health.HealthEndpointGroup;
+import org.springframework.boot.actuate.health.HealthEndpointGroups;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -19,6 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ActuatorSecurityTest {
 
     @Autowired MockMvc mvc;
+    @Autowired HealthEndpointGroups healthEndpointGroups;
 
     @Test
     void health_isPubliclyAccessibleAndReturnsOnlyStatus() throws Exception {
@@ -95,5 +99,38 @@ class ActuatorSecurityTest {
                 .andExpect(jsonPath("$.diskSpace").doesNotExist())
                 .andExpect(jsonPath("$.ping").doesNotExist())
                 .andExpect(jsonPath("$.status", not("DOWN")));
+    }
+
+    @Test
+    void readinessBody_hidesComponents_evenWhenDbIsAMember() throws Exception {
+        // Group membership is asserted separately via HealthEndpointGroups.
+        // This test guards that show-components=never still suppresses the body's component map.
+        mvc.perform(get("/actuator/health/readiness"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status", is("UP")))
+                .andExpect(jsonPath("$.components").doesNotExist())
+                .andExpect(jsonPath("$.details").doesNotExist())
+                .andExpect(jsonPath("$.db").doesNotExist());
+    }
+
+    // Group composition is asserted directly against HealthEndpointGroups rather than by
+    // simulating a DB-down DataSource — the latter would require swapping or mocking the
+    // auto-configured datasource, which is fragile across Spring Boot versions.
+    @Test
+    void readinessGroup_includesDb() {
+        HealthEndpointGroup readiness = healthEndpointGroups.get("readiness");
+        assertThat(readiness).as("readiness group must exist").isNotNull();
+        assertThat(readiness.isMember("db"))
+                .as("readiness group must include db so it reflects API-serving ability")
+                .isTrue();
+    }
+
+    @Test
+    void livenessGroup_excludesDb() {
+        HealthEndpointGroup liveness = healthEndpointGroups.get("liveness");
+        assertThat(liveness).as("liveness group must exist").isNotNull();
+        assertThat(liveness.isMember("db"))
+                .as("liveness group must not depend on db — a DB blip should not kill the JVM")
+                .isFalse();
     }
 }
