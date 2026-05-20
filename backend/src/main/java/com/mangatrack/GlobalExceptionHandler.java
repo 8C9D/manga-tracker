@@ -1,5 +1,7 @@
 package com.mangatrack;
 
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -38,6 +40,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         Map<String, Object> body = baseBody(HttpStatus.BAD_REQUEST, "Validation failed", request);
         body.put("fieldErrors", fieldErrors);
         return handleExceptionInternal(ex, body, headers, HttpStatus.BAD_REQUEST, request);
+    }
+
+    // @Validated on the controller engages MethodValidationInterceptor, which
+    // raises ConstraintViolationException for @RequestParam/@PathVariable
+    // failures. Surface those with the same shape as @Valid body validation.
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Object> handleConstraintViolation(
+            ConstraintViolationException ex, WebRequest request) {
+        Map<String, String> fieldErrors = new LinkedHashMap<>();
+        ex.getConstraintViolations().forEach(v ->
+                fieldErrors.put(leafField(v.getPropertyPath()), v.getMessage()));
+        Map<String, Object> body = baseBody(HttpStatus.BAD_REQUEST, "Validation failed", request);
+        body.put("fieldErrors", fieldErrors);
+        return handleExceptionInternal(ex, body, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
     }
 
     @ExceptionHandler(ResponseStatusException.class)
@@ -89,5 +105,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             return swr.getRequest().getRequestURI();
         }
         return null;
+    }
+
+    // jakarta.validation reports paths like "search.q" for parameter constraints —
+    // the leaf node is the user-meaningful name ("q") we want as the fieldErrors key.
+    private static String leafField(Path path) {
+        String leaf = null;
+        for (Path.Node node : path) {
+            leaf = node.getName();
+        }
+        return leaf == null ? "" : leaf;
     }
 }

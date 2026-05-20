@@ -10,6 +10,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -20,6 +21,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/manga")
+@Validated
 public class MangaController {
 
     private static final Logger log = LoggerFactory.getLogger(MangaController.class);
@@ -55,7 +57,8 @@ public class MangaController {
     }
 
     @GetMapping("/search")
-    public List<MangaSearchDto> search(@RequestParam String q) {
+    public List<MangaSearchDto> search(
+            @RequestParam @NotBlank @Size(max = 255) String q) {
         return mangaDexService.searchManga(q).stream()
                 .map(r -> new MangaSearchDto(r.id(), r.title(), r.coverUrl()))
                 .toList();

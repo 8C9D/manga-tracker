@@ -71,6 +71,75 @@ class MangaControllerTest {
 
     @WithMockUser
     @Test
+    void search_validQuery_delegatesToServiceAndReturnsDtos() throws Exception {
+        when(mangaDexService.searchManga("naruto"))
+                .thenReturn(List.of(new MangaDexService.MangaSearchResult("abc", "Naruto", "http://cover")));
+
+        mvc.perform(get("/api/manga/search").param("q", "naruto"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].mangadexId", is("abc")))
+                .andExpect(jsonPath("$[0].title", is("Naruto")))
+                .andExpect(jsonPath("$[0].coverUrl", is("http://cover")));
+
+        verify(mangaDexService).searchManga("naruto");
+    }
+
+    @WithMockUser
+    @Test
+    void search_blankQuery_returns400AndDoesNotCallMangaDex() throws Exception {
+        mvc.perform(get("/api/manga/search").param("q", ""))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error", is("Bad Request")))
+                .andExpect(jsonPath("$.fieldErrors.q").exists());
+
+        verify(mangaDexService, never()).searchManga(any());
+    }
+
+    @WithMockUser
+    @Test
+    void search_whitespaceQuery_returns400AndDoesNotCallMangaDex() throws Exception {
+        mvc.perform(get("/api/manga/search").param("q", "   "))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.q").exists());
+
+        verify(mangaDexService, never()).searchManga(any());
+    }
+
+    @WithMockUser
+    @Test
+    void search_overlyLongQuery_returns400AndDoesNotCallMangaDex() throws Exception {
+        String tooLong = "a".repeat(256);
+
+        mvc.perform(get("/api/manga/search").param("q", tooLong))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.q").exists());
+
+        verify(mangaDexService, never()).searchManga(any());
+    }
+
+    @WithMockUser
+    @Test
+    void search_maxLengthQuery_isAccepted() throws Exception {
+        String maxLen = "a".repeat(255);
+        when(mangaDexService.searchManga(maxLen)).thenReturn(List.of());
+
+        mvc.perform(get("/api/manga/search").param("q", maxLen))
+                .andExpect(status().isOk());
+
+        verify(mangaDexService).searchManga(maxLen);
+    }
+
+    @WithMockUser
+    @Test
+    void search_missingQuery_returns400AndDoesNotCallMangaDex() throws Exception {
+        mvc.perform(get("/api/manga/search"))
+                .andExpect(status().isBadRequest());
+
+        verify(mangaDexService, never()).searchManga(any());
+    }
+
+    @WithMockUser
+    @Test
     void list_returnsDtoWithoutMangadexId() throws Exception {
         Manga m = new Manga("Berserk");
         m.setMangadexId("should-not-leak");

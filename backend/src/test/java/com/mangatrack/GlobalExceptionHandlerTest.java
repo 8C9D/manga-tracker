@@ -69,6 +69,22 @@ class GlobalExceptionHandlerTest {
 
     @WithMockUser
     @Test
+    void requestParamConstraintViolation_returnsCleanBodyWithFieldErrors() throws Exception {
+        // Drives ConstraintViolationException via @Validated on MangaController +
+        // @NotBlank on the q request param. Confirms it lands in our shared shape.
+        mvc.perform(get("/api/manga/search").param("q", ""))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status", is(400)))
+                .andExpect(jsonPath("$.error", is("Bad Request")))
+                .andExpect(jsonPath("$.message", is("Validation failed")))
+                .andExpect(jsonPath("$.path", is("/api/manga/search")))
+                .andExpect(jsonPath("$.fieldErrors.q").exists())
+                .andExpect(jsonPath("$.trace").doesNotExist())
+                .andExpect(jsonPath("$.exception").doesNotExist());
+    }
+
+    @WithMockUser
+    @Test
     void responseStatusException_404_returnsCleanBodyWithReason() throws Exception {
         when(mangaRepository.findById(999L)).thenReturn(Optional.empty());
 
