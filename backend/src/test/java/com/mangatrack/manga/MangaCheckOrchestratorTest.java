@@ -103,6 +103,29 @@ class MangaCheckOrchestratorTest {
     }
 
     @Test
+    void isManualRunInProgress_reflectsParkedRunWithoutConsumingSlot() {
+        // noOpExecutor parks the submitted task without ever running it, so the
+        // flag stays set — letting us observe the orchestrator state directly.
+        MangaCheckOrchestrator orchestrator = new MangaCheckOrchestrator(repository, checkerService, noOpExecutor);
+
+        assertThat(orchestrator.isManualRunInProgress()).isFalse();
+        orchestrator.tryStartManualCheckAll();
+        assertThat(orchestrator.isManualRunInProgress()).isTrue();
+        // Peeking must NOT clear the flag.
+        assertThat(orchestrator.isManualRunInProgress()).isTrue();
+    }
+
+    @Test
+    void isManualRunInProgress_isFalseAfterRunCompletes() {
+        when(repository.findAll()).thenReturn(List.of(new Manga("A")));
+        MangaCheckOrchestrator orchestrator = new MangaCheckOrchestrator(repository, checkerService, inlineExecutor);
+
+        orchestrator.tryStartManualCheckAll();
+
+        assertThat(orchestrator.isManualRunInProgress()).isFalse();
+    }
+
+    @Test
     void manualCheckAll_interruptDuringBatch_abortsRemaining() {
         Manga a = new Manga("A");
         Manga b = new Manga("B");

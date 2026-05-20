@@ -13,10 +13,12 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Duration;
 import java.util.List;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -25,6 +27,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -44,6 +47,7 @@ class MangaControllerTest {
     @MockitoBean MangaDexService mangaDexService;
     @MockitoBean SubscriptionService subscriptionService;
     @MockitoBean MangaService mangaService;
+    @MockitoBean ManualCheckRateLimiter manualCheckRateLimiter;
 
     @Test
     void list_withoutAuth_returns401() throws Exception {
@@ -147,6 +151,8 @@ class MangaControllerTest {
     @WithMockUser
     @Test
     void checkAll_whenAccepted_returns202AndDoesNotIterateMangaSynchronously() throws Exception {
+        when(manualCheckRateLimiter.tryAcquire(any()))
+                .thenReturn(ManualCheckRateLimiter.Result.accepted());
         when(mangaCheckOrchestrator.tryStartManualCheckAll()).thenReturn(true);
 
         mvc.perform(post("/api/manga/check-all"))
@@ -161,13 +167,55 @@ class MangaControllerTest {
 
     @WithMockUser
     @Test
-    void checkAll_whenAlreadyRunning_returns409() throws Exception {
-        when(mangaCheckOrchestrator.tryStartManualCheckAll()).thenReturn(false);
+    void checkAll_whenAlreadyRunning_returns409AndDoesNotConsumeRateLimit() throws Exception {
+        when(mangaCheckOrchestrator.isManualRunInProgress()).thenReturn(true);
 
         mvc.perform(post("/api/manga/check-all"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message", is("A check is already in progress")));
 
+        verify(manualCheckRateLimiter, never()).tryAcquire(any());
+        verify(mangaCheckOrchestrator, never()).tryStartManualCheckAll();
         verify(mangaCheckerService, never()).check(any());
+    }
+
+    @WithMockUser(username = "alice")
+    @Test
+    void checkAll_whenRateLimited_returns429WithRetryAfterHeader() throws Exception {
+        when(manualCheckRateLimiter.tryAcquire("alice"))
+                .thenReturn(ManualCheckRateLimiter.Result.denied(Duration.ofMinutes(3)));
+
+        mvc.perform(post("/api/manga/check-all"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().string("Retry-After", "180"))
+                .andExpect(jsonPath("$.message", is("Please wait before starting another check.")));
+
+        verify(mangaCheckOrchestrator, never()).tryStartManualCheckAll();
+        verify(mangaCheckerService, never()).check(any());
+    }
+
+    @WithMockUser(username = "alice")
+    @Test
+    void checkAll_rateLimitKey_isAuthenticatedUsername() throws Exception {
+        when(manualCheckRateLimiter.tryAcquire(eq("alice")))
+                .thenReturn(ManualCheckRateLimiter.Result.accepted());
+        when(mangaCheckOrchestrator.tryStartManualCheckAll()).thenReturn(true);
+
+        mvc.perform(post("/api/manga/check-all"))
+                .andExpect(status().isAccepted());
+
+        verify(manualCheckRateLimiter).tryAcquire("alice");
+    }
+
+    @WithMockUser
+    @Test
+    void checkAll_retryAfterHeader_roundsUpSubSecondRemainder() throws Exception {
+        // 500ms of remaining wait must round UP to 1s so the client doesn't retry too early.
+        when(manualCheckRateLimiter.tryAcquire(any()))
+                .thenReturn(ManualCheckRateLimiter.Result.denied(Duration.ofMillis(500)));
+
+        mvc.perform(post("/api/manga/check-all"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().string("Retry-After", "1"));
     }
 }

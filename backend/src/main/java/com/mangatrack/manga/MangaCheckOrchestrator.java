@@ -29,6 +29,14 @@ public class MangaCheckOrchestrator {
     }
 
     /**
+     * Non-mutating peek at the manual-run flag. Lets the controller surface a
+     * 409 before consuming any other allowance (e.g. rate-limit tokens).
+     */
+    public boolean isManualRunInProgress() {
+        return manualRunInProgress.get();
+    }
+
+    /**
      * Submits a "check every manga" batch to the background executor.
      * Returns false if another manual run is already in flight, so the
      * caller can surface a 409 rather than queueing duplicate work.
