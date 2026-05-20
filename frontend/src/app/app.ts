@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { Manga, MangaSearchResult, MangaService } from './manga.service';
 import { AuthService } from './auth.service';
 import { LoginComponent } from './login.component';
+import { describeHttpError } from './http-error';
 
 @Component({
   selector: 'app-root',
@@ -61,11 +62,7 @@ export class App {
   loadManga(): void {
     this.mangaService.list().subscribe({
       next: (data) => this.mangaList.set(data),
-      error: (err) => {
-        if (err?.status !== 401) {
-          this.errorMessage.set('Failed to load manga. Is the backend running?');
-        }
-      }
+      error: (err) => this.showError(err, 'Failed to load manga.')
     });
   }
 
@@ -90,9 +87,9 @@ export class App {
           this.showAddAnyway.set(false);
         }
       },
-      error: () => {
+      error: (err) => {
         this.isSearching.set(false);
-        this.errorMessage.set('Search failed.');
+        this.showError(err, 'Search failed.');
       }
     });
   }
@@ -106,9 +103,7 @@ export class App {
         this.newTitle = '';
         this.errorMessage.set('');
       },
-      error: (err) => this.errorMessage.set(
-        err.status === 409 ? `"${title}" is already being tracked.` : 'Failed to add manga.'
-      )
+      error: (err) => this.showError(err, 'Failed to add manga.')
     });
   }
 
@@ -121,9 +116,7 @@ export class App {
         this.newTitle = '';
         this.errorMessage.set('');
       },
-      error: (err) => this.errorMessage.set(
-        err.status === 409 ? `"${title}" is already being tracked.` : 'Failed to add manga.'
-      )
+      error: (err) => this.showError(err, 'Failed to add manga.')
     });
   }
 
@@ -143,11 +136,7 @@ export class App {
       },
       error: (err) => {
         this.checkingAll.set(false);
-        if (err?.status === 409) {
-          this.errorMessage.set('A check is already in progress.');
-        } else {
-          this.errorMessage.set('Check all failed.');
-        }
+        this.showError(err, 'Check all failed.');
       }
     });
   }
@@ -160,9 +149,9 @@ export class App {
         this.checkingId.set(null);
         this.errorMessage.set('');
       },
-      error: () => {
-        this.errorMessage.set('Check failed.');
+      error: (err) => {
         this.checkingId.set(null);
+        this.showError(err, 'Check failed.');
       }
     });
   }
@@ -205,9 +194,9 @@ export class App {
         this.mangaList.set([]);
         this.removingAll.set(false);
       },
-      error: () => {
-        this.errorMessage.set('Failed to remove all manga.');
+      error: (err) => {
         this.removingAll.set(false);
+        this.showError(err, 'Failed to remove all manga.');
       }
     });
   }
@@ -215,7 +204,13 @@ export class App {
   removeManga(id: number): void {
     this.mangaService.remove(id).subscribe({
       next: () => this.mangaList.update(list => list.filter(m => m.id !== id)),
-      error: () => this.errorMessage.set('Failed to remove manga.')
+      error: (err) => this.showError(err, 'Failed to remove manga.')
     });
+  }
+
+  private showError(err: unknown, fallback: string): void {
+    // null = 401, already surfaced via auth.interceptor → AuthService.message.
+    const msg = describeHttpError(err, fallback);
+    if (msg !== null) this.errorMessage.set(msg);
   }
 }
