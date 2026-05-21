@@ -1,0 +1,31 @@
+<form class="add-form" (ngSubmit)="search.emit()">
+  <input
+    type="text"
+    [ngModel]="newTitle()"
+    (ngModelChange)="newTitle.set($event)"
+    name="title"
+    placeholder="Enter manga title..."
+    required
+  />
+  <button type="submit" [disabled]="isSearching()">
+    {{ isSearching() ? 'Searching...' : 'Search' }}
+  </button>
+</form>
+
+<div class="search-results" *ngIf="searchResults().length > 0">
+  <div class="search-results-header">
+    <span class="search-results-label">Select a manga to add:</span>
+    <button class="cancel-search-btn" (click)="cancel.emit()">Cancel</button>
+  </div>
+  <ul class="search-result-list">
+    <li *ngFor="let result of searchResults()" class="search-result-item">
+      <img *ngIf="result.coverUrl" [src]="result.coverUrl" [alt]="result.title" class="search-result-cover" referrerpolicy="no-referrer" />
+      <span class="search-result-title">{{ result.title }}</span>
+      <button class="add-result-btn" (click)="confirmAdd.emit(result)">Add</button>
+    </li>
+  </ul>
+</div>
+
+<div class="add-anyway" *ngIf="showAddAnyway()">
+  <button class="add-anyway-btn" (click)="addNoSource.emit()">Add without MangaDex</button>
+</div>

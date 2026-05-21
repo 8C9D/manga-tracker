@@ -1,16 +1,16 @@
 import { Component, computed, effect, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Manga, MangaSearchResult, MangaService } from './manga.service';
 import { AuthService } from './auth.service';
 import { LoginComponent } from './login.component';
 import { MangaListComponent } from './manga-list.component';
+import { MangaSearchAddComponent } from './manga-search-add.component';
 import { chaptersBehind } from './manga-utils';
 import { describeHttpError } from './http-error';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, FormsModule, LoginComponent, MangaListComponent],
+  imports: [CommonModule, LoginComponent, MangaListComponent, MangaSearchAddComponent],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
@@ -38,7 +38,7 @@ export class App {
         });
     }
   });
-  newTitle = '';
+  newTitle = signal('');
   errorMessage = signal('');
   checkingId = signal<number | null>(null);
   checkingAll = signal(false);
@@ -56,7 +56,7 @@ export class App {
         this.mangaList.set([]);
         this.errorMessage.set('');
         this.searchResults.set([]);
-        this.newTitle = '';
+        this.newTitle.set('');
       }
     });
   }
@@ -73,7 +73,7 @@ export class App {
   }
 
   addManga(): void {
-    const title = this.newTitle.trim();
+    const title = this.newTitle().trim();
     if (!title) return;
     this.isSearching.set(true);
     this.errorMessage.set('');
@@ -97,12 +97,12 @@ export class App {
   }
 
   confirmAdd(result: MangaSearchResult): void {
-    const title = this.newTitle.trim();
+    const title = this.newTitle().trim();
     this.mangaService.add(title, result.mangadexId, result.coverUrl).subscribe({
       next: (manga) => {
         this.mangaList.update(list => [...list, manga]);
         this.searchResults.set([]);
-        this.newTitle = '';
+        this.newTitle.set('');
         this.errorMessage.set('');
       },
       error: (err) => this.showError(err, 'Failed to add manga.')
@@ -110,12 +110,12 @@ export class App {
   }
 
   addNoSource(): void {
-    const title = this.newTitle.trim();
+    const title = this.newTitle().trim();
     this.mangaService.add(title, undefined, undefined, true).subscribe({
       next: (manga) => {
         this.mangaList.update(list => [...list, manga]);
         this.showAddAnyway.set(false);
-        this.newTitle = '';
+        this.newTitle.set('');
         this.errorMessage.set('');
       },
       error: (err) => this.showError(err, 'Failed to add manga.')
