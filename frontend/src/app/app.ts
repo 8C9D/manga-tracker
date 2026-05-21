@@ -4,11 +4,13 @@ import { CommonModule } from '@angular/common';
 import { Manga, MangaSearchResult, MangaService } from './manga.service';
 import { AuthService } from './auth.service';
 import { LoginComponent } from './login.component';
+import { MangaListComponent } from './manga-list.component';
+import { chaptersBehind } from './manga-utils';
 import { describeHttpError } from './http-error';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, FormsModule, LoginComponent],
+  imports: [CommonModule, FormsModule, LoginComponent, MangaListComponent],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
@@ -24,8 +26,8 @@ export class App {
         return list.sort((a, b) => b.id - a.id);
       case 'chapters-behind':
         return list.sort((a, b) =>
-          this.chaptersBehind(b.latestChapter, b.lastReadChapter) -
-          this.chaptersBehind(a.latestChapter, a.lastReadChapter)
+          chaptersBehind(b.latestChapter, b.lastReadChapter) -
+          chaptersBehind(a.latestChapter, a.lastReadChapter)
         );
       default: // next-check
         return list.sort((a, b) => {
@@ -156,12 +158,6 @@ export class App {
     });
   }
 
-  chaptersBehind(latest: string | null, lastRead: string | null): number {
-    if (!latest || !lastRead) return 0;
-    const diff = parseFloat(latest) - parseFloat(lastRead);
-    return diff > 0 ? Math.floor(diff) : 0;
-  }
-
   markRead(manga: Manga): void {
     if (!manga.latestChapter) return;
     this.markingReadId.set(manga.id);
@@ -172,18 +168,6 @@ export class App {
       },
       error: () => this.markingReadId.set(null)
     });
-  }
-
-  daysUntil(date: string | null): string {
-    if (!date) return '';
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const target = new Date(date + 'T00:00:00');
-    const diff = Math.round((target.getTime() - today.getTime()) / 86400000);
-    if (diff < 0) return 'overdue';
-    if (diff === 0) return 'today';
-    if (diff === 1) return 'tomorrow';
-    return `in ${diff} days`;
   }
 
   removeAll(): void {

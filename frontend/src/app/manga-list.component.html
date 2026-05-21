@@ -1,0 +1,58 @@
+<div class="list-header" *ngIf="mangaList().length > 0">
+  <select class="sort-select" [value]="sortBy()" (change)="sortByChange.emit($any($event.target).value)">
+    <option value="next-check">Next check date</option>
+    <option value="title">Title (A–Z)</option>
+    <option value="date-added">Date added</option>
+    <option value="chapters-behind">Chapters behind</option>
+  </select>
+  <div class="list-header-actions">
+    <button class="check-all-btn" (click)="checkAll.emit()" [disabled]="checkingAll()">
+      {{ checkingAll() ? 'Checking...' : 'Check all' }}
+    </button>
+    <button class="remove-all-btn" (click)="removeAll.emit()" [disabled]="removingAll()">
+      {{ removingAll() ? 'Removing...' : 'Remove all' }}
+    </button>
+  </div>
+</div>
+
+<ul class="manga-list" *ngIf="mangaList().length > 0; else empty">
+  <li *ngFor="let manga of mangaList()">
+    <div class="manga-cover-wrap">
+      <img *ngIf="manga.coverUrl; else coverPlaceholder" [src]="manga.coverUrl" [alt]="manga.title" class="manga-cover" referrerpolicy="no-referrer" />
+      <ng-template #coverPlaceholder><div class="manga-cover-placeholder"></div></ng-template>
+    </div>
+    <div class="manga-card-body">
+      <div class="manga-info">
+        <span class="manga-title">{{ manga.title }}</span>
+        <div class="manga-meta">
+          <ng-container *ngIf="!manga.noSource; else noSourceMeta">
+            <span *ngIf="manga.latestChapter; else noChapter">Ch. {{ manga.latestChapter }}</span>
+            <ng-template #noChapter><span class="pending">No chapter yet</span></ng-template>
+            <ng-container *ngIf="chaptersBehind(manga.latestChapter, manga.lastReadChapter) as behind">
+              <span class="behind">{{ behind }} ch. behind</span>
+            </ng-container>
+            <span *ngIf="manga.nextCheckDate; else noCheck">Due {{ daysUntil(manga.nextCheckDate) }}</span>
+            <ng-template #noCheck><span class="pending">Check pending</span></ng-template>
+          </ng-container>
+          <ng-template #noSourceMeta>
+            <span class="no-source">Not on MangaDex</span>
+          </ng-template>
+        </div>
+      </div>
+      <div class="manga-actions">
+        <button *ngIf="!manga.noSource" class="check-btn" (click)="checkNow.emit(manga.id)" [disabled]="checkingId() === manga.id">
+          {{ checkingId() === manga.id ? '...' : 'Check' }}
+        </button>
+        <button class="mark-read-btn" (click)="markRead.emit(manga)"
+          [disabled]="!manga.latestChapter || markingReadId() === manga.id || manga.lastReadChapter === manga.latestChapter">
+          {{ markingReadId() === manga.id ? '...' : 'Mark read' }}
+        </button>
+        <button class="remove-btn" (click)="remove.emit(manga.id)">Remove</button>
+      </div>
+    </div>
+  </li>
+</ul>
+
+<ng-template #empty>
+  <p class="empty">No manga tracked yet. Add one above!</p>
+</ng-template>
