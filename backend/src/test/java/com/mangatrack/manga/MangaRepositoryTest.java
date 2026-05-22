@@ -4,12 +4,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDate;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataJpaTest
 @ActiveProfiles("test")
@@ -54,5 +56,18 @@ class MangaRepositoryTest {
         List<Manga> due = repository.findDueForCheck(TODAY);
 
         assertThat(due).extracting(Manga::getTitle).doesNotContain("Future");
+    }
+
+    @Test
+    void title_uniqueConstraint_rejectsDuplicateInsert() {
+        // Production schema has uk_manga_title (V1__baseline_schema.sql); the
+        // controller's 409 "Already tracking" path depends on the persistence
+        // layer actually throwing DataIntegrityViolationException on duplicate
+        // insert. Drive saveAndFlush through Spring Data so the path mirrors
+        // MangaController.add() rather than relying on TestEntityManager.
+        repository.saveAndFlush(new Manga("Naruto"));
+
+        assertThatThrownBy(() -> repository.saveAndFlush(new Manga("Naruto")))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 }
