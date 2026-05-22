@@ -6,30 +6,30 @@
   </div>
 
   <app-manga-search-add
-    [(newTitle)]="newTitle"
-    [isSearching]="isSearching()"
-    [searchResults]="searchResults()"
-    [showAddAnyway]="showAddAnyway()"
-    (search)="addManga()"
-    (confirmAdd)="confirmAdd($event)"
-    (addNoSource)="addNoSource()"
-    (cancel)="cancelSearch()" />
+    [(newTitle)]="store.newTitle"
+    [isSearching]="store.isSearching()"
+    [searchResults]="store.searchResults()"
+    [showAddAnyway]="store.showAddAnyway()"
+    (search)="store.addManga()"
+    (confirmAdd)="store.confirmAdd($event)"
+    (addNoSource)="store.addNoSource()"
+    (cancel)="store.cancelSearch()" />
 
-  <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+  <p class="error" *ngIf="store.errorMessage()">{{ store.errorMessage() }}</p>
 
   <app-manga-list
-    [mangaList]="sortedMangaList()"
-    [sortBy]="sortBy()"
-    [checkingId]="checkingId()"
-    [markingReadId]="markingReadId()"
-    [checkingAll]="checkingAll()"
-    [removingAll]="removingAll()"
-    (sortByChange)="sortBy.set($event)"
-    (checkAll)="checkAll()"
-    (removeAll)="removeAll()"
-    (checkNow)="checkNow($event)"
-    (markRead)="markRead($event)"
-    (remove)="removeManga($event)" />
+    [mangaList]="store.sortedMangaList()"
+    [sortBy]="store.sortBy()"
+    [checkingId]="store.checkingId()"
+    [markingReadId]="store.markingReadId()"
+    [checkingAll]="store.checkingAll()"
+    [removingAll]="store.removingAll()"
+    (sortByChange)="store.sortBy.set($event)"
+    (checkAll)="store.checkAll()"
+    (removeAll)="store.removeAll()"
+    (checkNow)="store.checkNow($event)"
+    (markRead)="store.markRead($event)"
+    (remove)="store.removeManga($event)" />
 </div>
 } @else {
   <app-login />

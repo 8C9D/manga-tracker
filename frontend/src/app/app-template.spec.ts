@@ -7,13 +7,14 @@ import { App } from './app';
 import { LoginComponent } from './login.component';
 import { MangaSearchAddComponent } from './manga-search-add.component';
 import { MangaListComponent } from './manga-list.component';
+import { MangaAppFacade } from './manga-app.facade';
 import type { MangaSearchResult } from './manga.service';
 import { environment } from '../environments/environment';
 
-// Template/wiring slice for app.html. Stateful orchestration (HTTP flows,
-// signal updates) is covered in app.spec.ts — here we only assert which
-// children render in each auth branch, that the error banner appears, and
-// that child @Output bindings reach the parent.
+// Template/wiring slice for app.html. Stateful orchestration is covered in
+// manga-app.facade.spec.ts; the auth-effect wiring is covered in app.spec.ts.
+// Here we only assert which children render in each auth branch, that the
+// error banner appears, and that child @Output bindings reach the facade.
 
 const baseUrl = `${environment.apiUrl}/api/manga`;
 const TOKEN_KEY = 'auth.basic';
@@ -33,18 +34,18 @@ describe('App template wiring', () => {
 
   function renderAuthenticated(): {
     fixture: ComponentFixture<App>;
-    app: App;
+    facade: MangaAppFacade;
   } {
-    // Seed a token so the constructor effect takes the authenticated branch
-    // and triggers loadManga() — which we immediately flush to keep the
+    // Seed a token so the App effect takes the authenticated branch and
+    // triggers facade.loadManga() — which we immediately flush to keep the
     // template render tests independent of the load response.
     sessionStorage.setItem(TOKEN_KEY, 'Basic ' + btoa('user:pw'));
     const fixture = TestBed.createComponent(App);
-    const app = fixture.componentInstance;
+    const facade = TestBed.inject(MangaAppFacade);
     fixture.detectChanges();
     TestBed.inject(HttpTestingController).expectOne(baseUrl).flush([]);
     fixture.detectChanges();
-    return { fixture, app };
+    return { fixture, facade };
   }
 
   describe('unauthenticated shell', () => {
@@ -72,8 +73,8 @@ describe('App template wiring', () => {
 
   describe('error banner', () => {
     it('renders the .error paragraph with the message when errorMessage is set', () => {
-      const { fixture, app } = renderAuthenticated();
-      app.errorMessage.set('Something broke');
+      const { fixture, facade } = renderAuthenticated();
+      facade.errorMessage.set('Something broke');
       fixture.detectChanges();
 
       const banner = fixture.nativeElement.querySelector('.error') as HTMLElement | null;
@@ -82,8 +83,8 @@ describe('App template wiring', () => {
     });
 
     it('omits the .error paragraph when errorMessage is empty', () => {
-      const { fixture, app } = renderAuthenticated();
-      app.errorMessage.set('');
+      const { fixture, facade } = renderAuthenticated();
+      facade.errorMessage.set('');
       fixture.detectChanges();
       expect(fixture.nativeElement.querySelector('.error')).toBeNull();
     });
@@ -92,10 +93,10 @@ describe('App template wiring', () => {
   describe('child output wiring', () => {
     // Each test fires the @Output directly on the child component instance,
     // bypassing the child's own DOM (covered in its own spec) and proving the
-    // template's (event)="..." binding lands on the App method.
-    it('wires MangaSearchAddComponent.search to App.addManga()', () => {
-      const { fixture, app } = renderAuthenticated();
-      const spy = vi.spyOn(app, 'addManga').mockImplementation(() => {});
+    // template's (event)="..." binding lands on the facade method.
+    it('wires MangaSearchAddComponent.search to facade.addManga()', () => {
+      const { fixture, facade } = renderAuthenticated();
+      const spy = vi.spyOn(facade, 'addManga').mockImplementation(() => {});
       const child = fixture.debugElement.query(By.directive(MangaSearchAddComponent))
         .componentInstance as MangaSearchAddComponent;
 
@@ -103,9 +104,9 @@ describe('App template wiring', () => {
       expect(spy).toHaveBeenCalledTimes(1);
     });
 
-    it('wires MangaSearchAddComponent.confirmAdd to App.confirmAdd($event)', () => {
-      const { fixture, app } = renderAuthenticated();
-      const spy = vi.spyOn(app, 'confirmAdd').mockImplementation(() => {});
+    it('wires MangaSearchAddComponent.confirmAdd to facade.confirmAdd($event)', () => {
+      const { fixture, facade } = renderAuthenticated();
+      const spy = vi.spyOn(facade, 'confirmAdd').mockImplementation(() => {});
       const child = fixture.debugElement.query(By.directive(MangaSearchAddComponent))
         .componentInstance as MangaSearchAddComponent;
       const result: MangaSearchResult = { mangadexId: 'mid-1', title: 'Naruto', coverUrl: null };
@@ -115,9 +116,9 @@ describe('App template wiring', () => {
       expect(spy).toHaveBeenCalledWith(result);
     });
 
-    it('wires MangaListComponent.checkNow to App.checkNow($event)', () => {
-      const { fixture, app } = renderAuthenticated();
-      const spy = vi.spyOn(app, 'checkNow').mockImplementation(() => {});
+    it('wires MangaListComponent.checkNow to facade.checkNow($event)', () => {
+      const { fixture, facade } = renderAuthenticated();
+      const spy = vi.spyOn(facade, 'checkNow').mockImplementation(() => {});
       const child = fixture.debugElement.query(By.directive(MangaListComponent))
         .componentInstance as MangaListComponent;
 
@@ -126,14 +127,14 @@ describe('App template wiring', () => {
       expect(spy).toHaveBeenCalledWith(42);
     });
 
-    it('wires MangaListComponent.sortByChange to App.sortBy.set($event)', () => {
-      const { fixture, app } = renderAuthenticated();
-      expect(app.sortBy()).toBe('next-check');
+    it('wires MangaListComponent.sortByChange to facade.sortBy.set($event)', () => {
+      const { fixture, facade } = renderAuthenticated();
+      expect(facade.sortBy()).toBe('next-check');
       const child = fixture.debugElement.query(By.directive(MangaListComponent))
         .componentInstance as MangaListComponent;
 
       child.sortByChange.emit('title');
-      expect(app.sortBy()).toBe('title');
+      expect(facade.sortBy()).toBe('title');
     });
   });
 });
