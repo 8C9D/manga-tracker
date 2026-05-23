@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -149,6 +150,35 @@ class NotificationDispatcherTest {
 
         verify(subscriptionRepository).findByMangaId(42L);
         verifyNoInteractions(userRepository, logRepository, notificationService);
+    }
+
+    @Test
+    void sendOnce_existingFailedLog_retryFailsAgain_remainsFailedAndUpdatesRetryMetadata() {
+        LocalDateTime priorAttemptAt = LocalDateTime.now().minusHours(1);
+        NotificationLog existing = new NotificationLog(7L, 42L, "101");
+        existing.setStatus(NotificationStatus.FAILED);
+        existing.setAttempts(1);
+        existing.setLastError("Previous error");
+        existing.setLastAttemptAt(priorAttemptAt);
+        when(logRepository.findByUserIdAndMangaIdAndChapter(7L, 42L, "101"))
+                .thenReturn(Optional.of(existing));
+        doThrow(new RuntimeException("Twilio 503"))
+                .when(notificationService).send(user, manga, "101");
+
+        dispatcher.sendOnce(user, manga, "101");
+
+        verify(notificationService).send(user, manga, "101");
+        ArgumentCaptor<NotificationLog> captor = ArgumentCaptor.forClass(NotificationLog.class);
+        verify(logRepository).save(captor.capture());
+        NotificationLog saved = captor.getValue();
+        assertThat(saved).isSameAs(existing);
+        assertThat(saved.getStatus()).isEqualTo(NotificationStatus.FAILED);
+        assertThat(saved.getAttempts()).isEqualTo(2);
+        assertThat(saved.getLastError()).isEqualTo("Twilio 503");
+        assertThat(saved.getLastAttemptAt()).isAfter(priorAttemptAt);
+        assertThat(saved.getUserId()).isEqualTo(7L);
+        assertThat(saved.getMangaId()).isEqualTo(42L);
+        assertThat(saved.getChapter()).isEqualTo("101");
     }
 
     @Test
