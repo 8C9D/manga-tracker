@@ -60,4 +60,22 @@ class CorsPreflightIntegrationTest {
                 .andExpect(header().string("Access-Control-Allow-Origin", is((String) null)))
                 .andExpect(header().string("Access-Control-Allow-Origin", not(DISALLOWED_ORIGIN)));
     }
+
+    @Test
+    void preflight_advertisesEveryMethodTheFrontendIssues() throws Exception {
+        // POST is covered above. The Angular client also sends GET (list/search),
+        // PATCH (mark-read), and DELETE (remove/removeAll) with the Authorization
+        // header, which forces a browser preflight. Dropping any of these from
+        // WebConfig.setAllowedMethods would silently break a user-facing flow,
+        // since MockMvc happily executes the underlying request even when the CORS
+        // grant is missing — only the browser enforces preflight.
+        mvc.perform(options("/api/manga")
+                        .header("Origin", ALLOWED_ORIGIN)
+                        .header("Access-Control-Request-Method", "POST")
+                        .header("Access-Control-Request-Headers", "Content-Type"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Methods", containsString("GET")))
+                .andExpect(header().string("Access-Control-Allow-Methods", containsString("PATCH")))
+                .andExpect(header().string("Access-Control-Allow-Methods", containsString("DELETE")));
+    }
 }
