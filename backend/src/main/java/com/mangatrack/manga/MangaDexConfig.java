@@ -22,7 +22,7 @@ public class MangaDexConfig {
     }
 
     @Bean
-    public MangaDexService.Sleeper mangaDexSleeper() {
-        return MangaDexService.Sleeper.real();
+    public MangaDexCallExecutor.Sleeper mangaDexSleeper() {
+        return MangaDexCallExecutor.Sleeper.real();
     }
 }

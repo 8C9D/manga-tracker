@@ -54,7 +54,8 @@ class MangaDexServiceTest {
         RestClient.Builder builder = RestClient.builder().baseUrl(props.baseUrl());
         server = MockRestServiceServer.bindTo(builder).build();
         RestClient client = builder.build();
-        return new MangaDexService(client, props, sleepRecorder::add);
+        MangaDexCallExecutor executor = new MangaDexCallExecutor(props, sleepRecorder::add);
+        return new MangaDexService(client, executor);
     }
 
     @Test
