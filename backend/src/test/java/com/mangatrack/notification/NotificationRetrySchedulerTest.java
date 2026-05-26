@@ -7,7 +7,6 @@ import com.mangatrack.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -30,14 +29,13 @@ class NotificationRetrySchedulerTest {
     @Mock UserRepository userRepository;
     @Mock MangaRepository mangaRepository;
 
-    @InjectMocks NotificationRetryScheduler scheduler;
-
+    private NotificationRetryScheduler scheduler;
     private User user;
     private Manga manga;
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(scheduler, "maxAttempts", 3);
+        scheduler = new NotificationRetryScheduler(logRepository, dispatcher, userRepository, mangaRepository, 3);
         user = new User("Bob", "+12025550101");
         ReflectionTestUtils.setField(user, "id", 7L);
         manga = new Manga("Naruto");
@@ -56,14 +54,15 @@ class NotificationRetrySchedulerTest {
 
     @Test
     void retryFailed_queriesRepositoryWithConfiguredMaxAttempts() {
-        // maxAttempts comes from @Value("${notification.sms.max-retry-attempts:3}");
-        // override it here to prove the field flows into the repository call rather
-        // than a hard-coded literal.
-        ReflectionTestUtils.setField(scheduler, "maxAttempts", 5);
+        // maxAttempts is bound from @Value("${notification.sms.max-retry-attempts:3}");
+        // construct with an override to prove the value flows into the repository call
+        // rather than a hard-coded literal.
+        NotificationRetryScheduler schedulerWithFive =
+                new NotificationRetryScheduler(logRepository, dispatcher, userRepository, mangaRepository, 5);
         when(logRepository.findByStatusAndAttemptsLessThan(NotificationStatus.FAILED, 5))
                 .thenReturn(List.of());
 
-        scheduler.retryFailed();
+        schedulerWithFive.retryFailed();
 
         verify(logRepository).findByStatusAndAttemptsLessThan(NotificationStatus.FAILED, 5);
     }

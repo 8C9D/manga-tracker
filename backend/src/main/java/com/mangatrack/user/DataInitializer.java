@@ -12,15 +12,15 @@ public class DataInitializer implements CommandLineRunner {
     private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
 
     private final UserRepository userRepository;
+    private final String defaultName;
+    private final String defaultPhone;
 
-    @Value("${app.default-user.name}")
-    private String defaultName;
-
-    @Value("${app.default-user.phone}")
-    private String defaultPhone;
-
-    public DataInitializer(UserRepository userRepository) {
+    public DataInitializer(UserRepository userRepository,
+                           @Value("${app.default-user.name}") String defaultName,
+                           @Value("${app.default-user.phone}") String defaultPhone) {
         this.userRepository = userRepository;
+        this.defaultName = defaultName;
+        this.defaultPhone = defaultPhone;
     }
 
     @Override

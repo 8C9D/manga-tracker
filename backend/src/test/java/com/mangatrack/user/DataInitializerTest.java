@@ -6,7 +6,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
 
@@ -27,9 +26,7 @@ class DataInitializerTest {
 
     @BeforeEach
     void setUp() {
-        initializer = new DataInitializer(userRepository);
-        ReflectionTestUtils.setField(initializer, "defaultName", DEFAULT_NAME);
-        ReflectionTestUtils.setField(initializer, "defaultPhone", DEFAULT_PHONE);
+        initializer = new DataInitializer(userRepository, DEFAULT_NAME, DEFAULT_PHONE);
     }
 
     @Test

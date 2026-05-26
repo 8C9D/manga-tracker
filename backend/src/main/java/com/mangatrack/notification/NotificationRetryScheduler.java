@@ -22,18 +22,18 @@ public class NotificationRetryScheduler {
     private final NotificationDispatcher dispatcher;
     private final UserRepository userRepository;
     private final MangaRepository mangaRepository;
-
-    @Value("${notification.sms.max-retry-attempts:3}")
-    private int maxAttempts;
+    private final int maxAttempts;
 
     public NotificationRetryScheduler(NotificationLogRepository logRepository,
                                       NotificationDispatcher dispatcher,
                                       UserRepository userRepository,
-                                      MangaRepository mangaRepository) {
+                                      MangaRepository mangaRepository,
+                                      @Value("${notification.sms.max-retry-attempts:3}") int maxAttempts) {
         this.logRepository = logRepository;
         this.dispatcher = dispatcher;
         this.userRepository = userRepository;
         this.mangaRepository = mangaRepository;
+        this.maxAttempts = maxAttempts;
     }
 
     @Scheduled(cron = "0 0 * * * *")
