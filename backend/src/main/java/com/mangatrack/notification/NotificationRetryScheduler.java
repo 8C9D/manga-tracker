@@ -11,7 +11,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Component
 public class NotificationRetryScheduler {
@@ -45,16 +48,24 @@ public class NotificationRetryScheduler {
 
         log.info("Retrying {} failed notification(s)", toRetry.size());
 
-        for (NotificationLog entry : toRetry) {
-            Optional<User> user = userRepository.findById(entry.getUserId());
-            Optional<Manga> manga = mangaRepository.findById(entry.getMangaId());
+        Set<Long> userIds = toRetry.stream().map(NotificationLog::getUserId).collect(Collectors.toSet());
+        Set<Long> mangaIds = toRetry.stream().map(NotificationLog::getMangaId).collect(Collectors.toSet());
 
-            if (user.isEmpty() || manga.isEmpty()) {
+        Map<Long, User> usersById = userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+        Map<Long, Manga> mangasById = mangaRepository.findAllById(mangaIds).stream()
+                .collect(Collectors.toMap(Manga::getId, Function.identity()));
+
+        for (NotificationLog entry : toRetry) {
+            User user = usersById.get(entry.getUserId());
+            Manga manga = mangasById.get(entry.getMangaId());
+
+            if (user == null || manga == null) {
                 log.warn("Skipping retry for log {} — user or manga no longer exists", entry.getId());
                 continue;
             }
 
-            dispatcher.sendOnce(user.get(), manga.get(), entry.getChapter());
+            dispatcher.sendOnce(user, manga, entry.getChapter());
         }
     }
 }
