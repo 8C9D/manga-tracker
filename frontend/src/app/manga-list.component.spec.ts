@@ -2,19 +2,7 @@
 import { TestBed } from '@angular/core/testing';
 import { MangaListComponent } from './manga-list.component';
 import type { Manga } from './manga.service';
-
-function makeManga(overrides: Partial<Manga> = {}): Manga {
-  return {
-    id: 1,
-    title: 'Untitled',
-    coverUrl: null,
-    latestChapter: null,
-    lastReadChapter: null,
-    nextCheckDate: null,
-    noSource: false,
-    ...overrides,
-  };
-}
+import { makeManga } from './testing';
 
 interface RenderInputs {
   mangaList?: Manga[];

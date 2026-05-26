@@ -5,21 +5,9 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { MangaAppFacade } from './manga-app.facade';
 import type { Manga, MangaSearchResult } from './manga.service';
 import { environment } from '../environments/environment';
+import { makeManga } from './testing';
 
 const baseUrl = `${environment.apiUrl}/api/manga`;
-
-function makeManga(overrides: Partial<Manga> = {}): Manga {
-  return {
-    id: 1,
-    title: 'Untitled',
-    coverUrl: null,
-    latestChapter: null,
-    lastReadChapter: null,
-    nextCheckDate: null,
-    noSource: false,
-    ...overrides,
-  };
-}
 
 describe('MangaAppFacade', () => {
   let facade: MangaAppFacade;
