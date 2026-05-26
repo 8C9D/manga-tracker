@@ -61,7 +61,7 @@ public class MangaController {
     public List<MangaSearchDto> search(
             @RequestParam @NotBlank @Size(max = 255) String q) {
         return mangaDexService.searchManga(q).stream()
-                .map(r -> new MangaSearchDto(r.id(), r.title(), r.coverUrl()))
+                .map(MangaSearchDto::from)
                 .toList();
     }
 
@@ -154,7 +154,11 @@ public class MangaController {
             boolean noSource
     ) {}
 
-    public record MangaSearchDto(String mangadexId, String title, String coverUrl) {}
+    public record MangaSearchDto(String mangadexId, String title, String coverUrl) {
+        public static MangaSearchDto from(MangaDexService.MangaSearchResult result) {
+            return new MangaSearchDto(result.id(), result.title(), result.coverUrl());
+        }
+    }
 
     public record MarkReadRequest(@NotBlank @Size(max = 20) String chapter) {}
 }
