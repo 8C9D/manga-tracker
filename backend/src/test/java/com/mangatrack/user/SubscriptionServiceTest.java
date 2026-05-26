@@ -29,7 +29,8 @@ class SubscriptionServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new SubscriptionService(subscriptionRepository, userRepository, DEFAULT_PHONE);
+        service = new SubscriptionService(subscriptionRepository, userRepository,
+                new DefaultUserProperties("Default", DEFAULT_PHONE));
     }
 
     @Test

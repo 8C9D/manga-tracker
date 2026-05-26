@@ -26,7 +26,8 @@ class DataInitializerTest {
 
     @BeforeEach
     void setUp() {
-        initializer = new DataInitializer(userRepository, DEFAULT_NAME, DEFAULT_PHONE);
+        initializer = new DataInitializer(userRepository,
+                new DefaultUserProperties(DEFAULT_NAME, DEFAULT_PHONE));
     }
 
     @Test

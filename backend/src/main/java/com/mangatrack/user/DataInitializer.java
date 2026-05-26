@@ -2,7 +2,6 @@ package com.mangatrack.user;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -12,22 +11,18 @@ public class DataInitializer implements CommandLineRunner {
     private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
 
     private final UserRepository userRepository;
-    private final String defaultName;
-    private final String defaultPhone;
+    private final DefaultUserProperties defaultUser;
 
-    public DataInitializer(UserRepository userRepository,
-                           @Value("${app.default-user.name}") String defaultName,
-                           @Value("${app.default-user.phone}") String defaultPhone) {
+    public DataInitializer(UserRepository userRepository, DefaultUserProperties defaultUser) {
         this.userRepository = userRepository;
-        this.defaultName = defaultName;
-        this.defaultPhone = defaultPhone;
+        this.defaultUser = defaultUser;
     }
 
     @Override
     public void run(String... args) {
-        if (userRepository.findByPhoneNumber(defaultPhone).isEmpty()) {
-            userRepository.save(new User(defaultName, defaultPhone));
-            log.info("Created default user: {} ({})", defaultName, defaultPhone);
+        if (userRepository.findByPhoneNumber(defaultUser.phone()).isEmpty()) {
+            userRepository.save(new User(defaultUser.name(), defaultUser.phone()));
+            log.info("Created default user: {} ({})", defaultUser.name(), defaultUser.phone());
         }
     }
 }
