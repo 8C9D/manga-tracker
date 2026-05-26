@@ -44,11 +44,10 @@ class MangaControllerTest {
 
     @MockitoBean MangaRepository mangaRepository;
     @MockitoBean MangaCheckerService mangaCheckerService;
-    @MockitoBean MangaCheckOrchestrator mangaCheckOrchestrator;
     @MockitoBean MangaDexService mangaDexService;
     @MockitoBean SubscriptionService subscriptionService;
     @MockitoBean MangaService mangaService;
-    @MockitoBean ManualCheckRateLimiter manualCheckRateLimiter;
+    @MockitoBean ManualCheckAllCoordinator manualCheckAllCoordinator;
 
     @Test
     void list_withoutAuth_returns401() throws Exception {
@@ -221,15 +220,14 @@ class MangaControllerTest {
     @WithMockUser
     @Test
     void checkAll_whenAccepted_returns202AndDoesNotIterateMangaSynchronously() throws Exception {
-        when(manualCheckRateLimiter.tryAcquire(any()))
-                .thenReturn(ManualCheckRateLimiter.Result.accepted());
-        when(mangaCheckOrchestrator.tryStartManualCheckAll()).thenReturn(true);
+        when(manualCheckAllCoordinator.start(any()))
+                .thenReturn(ManualCheckAllCoordinator.Result.started());
 
         mvc.perform(post("/api/manga/check-all"))
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.message", is("Check started")));
 
-        verify(mangaCheckOrchestrator).tryStartManualCheckAll();
+        verify(manualCheckAllCoordinator).start(any());
         // The controller must NOT do the per-manga loop on the request thread.
         verify(mangaCheckerService, never()).check(any());
         verify(mangaRepository, never()).findAll();
@@ -237,30 +235,28 @@ class MangaControllerTest {
 
     @WithMockUser
     @Test
-    void checkAll_whenAlreadyRunning_returns409AndDoesNotConsumeRateLimit() throws Exception {
-        when(mangaCheckOrchestrator.isManualRunInProgress()).thenReturn(true);
+    void checkAll_whenAlreadyRunning_returns409() throws Exception {
+        when(manualCheckAllCoordinator.start(any()))
+                .thenReturn(ManualCheckAllCoordinator.Result.alreadyRunning());
 
         mvc.perform(post("/api/manga/check-all"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message", is("A check is already in progress")));
 
-        verify(manualCheckRateLimiter, never()).tryAcquire(any());
-        verify(mangaCheckOrchestrator, never()).tryStartManualCheckAll();
         verify(mangaCheckerService, never()).check(any());
     }
 
     @WithMockUser(username = "alice")
     @Test
     void checkAll_whenRateLimited_returns429WithRetryAfterHeader() throws Exception {
-        when(manualCheckRateLimiter.tryAcquire("alice"))
-                .thenReturn(ManualCheckRateLimiter.Result.denied(Duration.ofMinutes(3)));
+        when(manualCheckAllCoordinator.start("alice"))
+                .thenReturn(ManualCheckAllCoordinator.Result.rateLimited(Duration.ofMinutes(3)));
 
         mvc.perform(post("/api/manga/check-all"))
                 .andExpect(status().isTooManyRequests())
                 .andExpect(header().string("Retry-After", "180"))
                 .andExpect(jsonPath("$.message", is("Please wait before starting another check.")));
 
-        verify(mangaCheckOrchestrator, never()).tryStartManualCheckAll();
         verify(mangaCheckerService, never()).check(any());
     }
 
@@ -269,8 +265,8 @@ class MangaControllerTest {
     void checkAll_429_advertisesRetryAfterAsCorsExposedHeader() throws Exception {
         // Cross-origin browsers can only read Retry-After if the backend lists it
         // in Access-Control-Expose-Headers. Drive the CORS filter by sending Origin.
-        when(manualCheckRateLimiter.tryAcquire("alice"))
-                .thenReturn(ManualCheckRateLimiter.Result.denied(Duration.ofMinutes(3)));
+        when(manualCheckAllCoordinator.start("alice"))
+                .thenReturn(ManualCheckAllCoordinator.Result.rateLimited(Duration.ofMinutes(3)));
 
         mvc.perform(post("/api/manga/check-all").header("Origin", "http://localhost:4200"))
                 .andExpect(status().isTooManyRequests())
@@ -282,22 +278,21 @@ class MangaControllerTest {
     @WithMockUser(username = "alice")
     @Test
     void checkAll_rateLimitKey_isAuthenticatedUsername() throws Exception {
-        when(manualCheckRateLimiter.tryAcquire(eq("alice")))
-                .thenReturn(ManualCheckRateLimiter.Result.accepted());
-        when(mangaCheckOrchestrator.tryStartManualCheckAll()).thenReturn(true);
+        when(manualCheckAllCoordinator.start(eq("alice")))
+                .thenReturn(ManualCheckAllCoordinator.Result.started());
 
         mvc.perform(post("/api/manga/check-all"))
                 .andExpect(status().isAccepted());
 
-        verify(manualCheckRateLimiter).tryAcquire("alice");
+        verify(manualCheckAllCoordinator).start("alice");
     }
 
     @WithMockUser
     @Test
     void checkAll_retryAfterHeader_roundsUpSubSecondRemainder() throws Exception {
         // 500ms of remaining wait must round UP to 1s so the client doesn't retry too early.
-        when(manualCheckRateLimiter.tryAcquire(any()))
-                .thenReturn(ManualCheckRateLimiter.Result.denied(Duration.ofMillis(500)));
+        when(manualCheckAllCoordinator.start(any()))
+                .thenReturn(ManualCheckAllCoordinator.Result.rateLimited(Duration.ofMillis(500)));
 
         mvc.perform(post("/api/manga/check-all"))
                 .andExpect(status().isTooManyRequests())
