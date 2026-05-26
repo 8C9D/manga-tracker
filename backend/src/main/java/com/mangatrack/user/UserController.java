@@ -1,5 +1,6 @@
 package com.mangatrack.user;
 
+import com.mangatrack.ApiErrors;
 import com.mangatrack.manga.MangaRepository;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -68,7 +69,7 @@ public class UserController {
                                      @Valid @RequestBody SubscriptionRequest request) {
         requireUser(userId);
         if (!mangaRepository.existsById(request.mangaId())) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Manga not found");
+            throw ApiErrors.notFound("Manga not found");
         }
         if (subscriptionRepository.existsByUserIdAndMangaId(userId, request.mangaId())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
@@ -86,7 +87,7 @@ public class UserController {
 
     private void requireUser(Long userId) {
         if (!userRepository.existsById(userId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+            throw ApiErrors.notFound("User not found");
         }
     }
 

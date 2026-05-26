@@ -1,5 +1,6 @@
 package com.mangatrack.manga;
 
+import com.mangatrack.ApiErrors;
 import com.mangatrack.user.SubscriptionService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -122,17 +123,14 @@ public class MangaController {
 
     @PostMapping("/{id}/check")
     public MangaDto checkNow(@PathVariable Long id) {
-        Manga manga = repository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        Manga manga = ApiErrors.requireFound(repository.findById(id));
         mangaCheckerService.check(manga);
-        return MangaDto.from(repository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
+        return MangaDto.from(ApiErrors.requireFound(repository.findById(id)));
     }
 
     @PatchMapping("/{id}/read")
     public MangaDto markRead(@PathVariable Long id, @Valid @RequestBody MarkReadRequest request) {
-        Manga manga = repository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        Manga manga = ApiErrors.requireFound(repository.findById(id));
         manga.setLastReadChapter(request.chapter());
         return MangaDto.from(repository.save(manga));
     }
