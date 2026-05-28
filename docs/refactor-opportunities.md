@@ -149,4 +149,4 @@ covered by `GlobalExceptionHandlerTest`, zero behavior change.
 
 | Cleanup | Files changed | Validation run | Commit | Push | Notes |
 | --- | --- | --- | --- | --- | --- |
-| _pending_ | | | | | |
+| §3.1 Extract `validationBody` in `GlobalExceptionHandler` | `backend/.../GlobalExceptionHandler.java` | `-Dtest=GlobalExceptionHandlerTest` (11/11) + full `./mvnw test` (180/180) | `refactor: extract shared validation-error body builder` | ✓ | Behavior-preserving; both validation arms now share one envelope builder. |

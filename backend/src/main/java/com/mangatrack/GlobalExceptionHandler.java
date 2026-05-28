@@ -37,9 +37,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ex.getBindingResult().getFieldErrors().forEach(err ->
                 fieldErrors.put(err.getField(), err.getDefaultMessage()));
 
-        Map<String, Object> body = baseBody(HttpStatus.BAD_REQUEST, "Validation failed", request);
-        body.put("fieldErrors", fieldErrors);
-        return handleExceptionInternal(ex, body, headers, HttpStatus.BAD_REQUEST, request);
+        return handleExceptionInternal(ex, validationBody(fieldErrors, request),
+                headers, HttpStatus.BAD_REQUEST, request);
     }
 
     // @Validated on the controller engages MethodValidationInterceptor, which
@@ -51,9 +50,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         Map<String, String> fieldErrors = new LinkedHashMap<>();
         ex.getConstraintViolations().forEach(v ->
                 fieldErrors.put(leafField(v.getPropertyPath()), v.getMessage()));
-        Map<String, Object> body = baseBody(HttpStatus.BAD_REQUEST, "Validation failed", request);
-        body.put("fieldErrors", fieldErrors);
-        return handleExceptionInternal(ex, body, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
+        return handleExceptionInternal(ex, validationBody(fieldErrors, request),
+                new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
     }
 
     @ExceptionHandler(ResponseStatusException.class)
@@ -85,6 +83,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             body = baseBody(status, status.getReasonPhrase(), request);
         }
         return super.handleExceptionInternal(ex, body, headers, statusCode, request);
+    }
+
+    // Shared envelope for the two validation arms (@Valid body + @RequestParam/
+    // @PathVariable constraints) so they can't drift out of shape.
+    private static Map<String, Object> validationBody(Map<String, String> fieldErrors, WebRequest request) {
+        Map<String, Object> body = baseBody(HttpStatus.BAD_REQUEST, "Validation failed", request);
+        body.put("fieldErrors", fieldErrors);
+        return body;
     }
 
     private static Map<String, Object> baseBody(HttpStatus status, String message, WebRequest request) {
