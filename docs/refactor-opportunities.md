@@ -149,5 +149,12 @@ covered by `GlobalExceptionHandlerTest`, zero behavior change.
 
 | Cleanup | Files changed | Validation run | Commit | Push | Notes |
 | --- | --- | --- | --- | --- | --- |
-| §3.1 Extract `validationBody` in `GlobalExceptionHandler` | `backend/.../GlobalExceptionHandler.java` | `-Dtest=GlobalExceptionHandlerTest` (11/11) + full `./mvnw test` (180/180) | `refactor: extract shared validation-error body builder` | ✓ | Behavior-preserving; both validation arms now share one envelope builder. |
-| §3.2 Extract `callOrEmpty` in `MangaDexService` | `backend/.../manga/MangaDexService.java` | `-Dtest=MangaDexServiceTest` (11/11) + full `./mvnw test` (180/180) | `refactor: extract MangaDex degrade-to-empty wrapper` | ✓ | Behavior-preserving incl. exact log messages (`search`/`cover`/`chapter`); verified in test logs. |
+| §3.1 Extract `validationBody` in `GlobalExceptionHandler` | `backend/.../GlobalExceptionHandler.java` | `-Dtest=GlobalExceptionHandlerTest` (11/11) + full `./mvnw test` (180/180) | `aedb1f7` — refactor: extract shared validation-error body builder | ✓ | Behavior-preserving; both validation arms now share one envelope builder. |
+| §3.2 Extract `callOrEmpty` in `MangaDexService` | `backend/.../manga/MangaDexService.java` | `-Dtest=MangaDexServiceTest` (11/11) + full `./mvnw test` (180/180) | `df98133` — refactor: extract MangaDex degrade-to-empty wrapper | ✓ | Behavior-preserving incl. exact log messages (`search`/`cover`/`chapter`); verified in test logs. |
+| §3.3 `MangaService` void-mapping helper | _none_ | n/a | _skipped_ | n/a | Reviewed; left inline as idiomatic. See §6. |
+
+**Run complete (2026-05-28).** 2 cleanups implemented + pushed, 1 reviewed and
+skipped. Baseline and post-change validation both green: backend 180 tests,
+frontend 136 tests. No dead code or unused imports found. Remaining candidates
+(§6) were judged behavior-sensitive or over-abstraction and intentionally left
+alone.
