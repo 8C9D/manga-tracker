@@ -11,6 +11,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 @Service
 public class MangaDexService {
@@ -26,7 +27,7 @@ public class MangaDexService {
     }
 
     public List<MangaSearchResult> searchManga(String title) {
-        try {
+        return callOrEmpty("search", title, List.of(), () -> {
             MangaListResponse response = executor.call("search '" + title + "'", () -> restClient.get()
                     .uri(uri -> uri
                             .path("/manga")
@@ -40,10 +41,7 @@ public class MangaDexService {
             return response.data().stream()
                     .map(entry -> new MangaSearchResult(entry.id(), extractTitle(entry.attributes()), extractCoverUrl(entry)))
                     .toList();
-        } catch (Exception e) {
-            log.warn("MangaDex search returning empty for '{}': {}", title, e.getMessage());
-            return List.of();
-        }
+        });
     }
 
     public Optional<MangaSearchResult> findManga(String title) {
@@ -52,7 +50,7 @@ public class MangaDexService {
     }
 
     public Optional<String> fetchCoverUrl(String mangadexId) {
-        try {
+        return callOrEmpty("cover", mangadexId, Optional.empty(), () -> {
             MangaSingleResponse response = executor.call("cover '" + mangadexId + "'", () -> restClient.get()
                     .uri(uri -> uri
                             .path("/manga/{id}")
@@ -64,14 +62,11 @@ public class MangaDexService {
                 return Optional.empty();
             }
             return Optional.ofNullable(extractCoverUrl(response.data()));
-        } catch (Exception e) {
-            log.warn("MangaDex cover returning empty for '{}': {}", mangadexId, e.getMessage());
-            return Optional.empty();
-        }
+        });
     }
 
     public Optional<ChapterInfo> fetchLatestChapter(String mangadexId) {
-        try {
+        return callOrEmpty("chapter", mangadexId, Optional.empty(), () -> {
             ChapterListResponse response = executor.call("feed '" + mangadexId + "'", () -> restClient.get()
                     .uri(uri -> uri
                             .path("/manga/{id}/feed")
@@ -88,9 +83,18 @@ public class MangaDexService {
                 return Optional.empty();
             }
             return Optional.of(new ChapterInfo(attrs.chapter(), attrs.publishAt().toLocalDate()));
+        });
+    }
+
+    // All three public lookups degrade the same way: any failure (network, 5xx
+    // exhausted, 4xx, mapping) is logged and turned into an empty result rather
+    // than propagated, so a flaky MangaDex never breaks a check run.
+    private <T> T callOrEmpty(String label, String id, T fallback, Supplier<T> body) {
+        try {
+            return body.get();
         } catch (Exception e) {
-            log.warn("MangaDex chapter returning empty for '{}': {}", mangadexId, e.getMessage());
-            return Optional.empty();
+            log.warn("MangaDex {} returning empty for '{}': {}", label, id, e.getMessage());
+            return fallback;
         }
     }
 
