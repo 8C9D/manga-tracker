@@ -43,7 +43,7 @@ The third pass (2026-05-29) targets the most significant remaining behavioral ga
 - **Suggested tests:** extend `UserControllerTest` with four `subscribe_*` slice tests stubbing `userRepository.existsById`, `mangaRepository.existsById`, and `subscriptionRepository.existsByUserIdAndMangaId`/`save`.
 - **Risk level:** Low (WebMvcTest slice, no behavior change).
 - **Suggested validation:** `./mvnw test -Dtest=UserControllerTest`
-- **Status:** Planned
+- **Status:** Implemented
 
 ### Gap H — `UserController` list-subscriptions + unsubscribe (`GET`/`DELETE .../subscriptions`)
 
@@ -54,7 +54,7 @@ The third pass (2026-05-29) targets the most significant remaining behavioral ga
 - **Suggested tests:** extend `UserControllerTest` with `getSubscriptions_*` and `unsubscribe_*` slice tests.
 - **Risk level:** Low.
 - **Suggested validation:** `./mvnw test -Dtest=UserControllerTest`
-- **Status:** Planned
+- **Status:** Implemented
 
 ### Gap I — `UserController.create` duplicate phone-number conflict (409)
 
@@ -154,9 +154,9 @@ _Entries below are filled in with the validated result and commit hash as each i
 - **Behavior covered:** the subscribe/list/unsubscribe HTTP contract that no test reached.
 - **New test cases (8):** subscribe → 201 persisting `(userId, mangaId)`; subscribe unknown user → 404; subscribe unknown manga → 404; subscribe already-subscribed → 409; getSubscriptions unknown user → 404; getSubscriptions known user → 200 with DTO list; unsubscribe existing → 204 + delete; unsubscribe absent → 204 + delete never called.
 - **Validation run:** `./mvnw test -Dtest=UserControllerTest`
-- **Result:** _pending_
-- **Commit hash:** _pending_
-- **Push result:** _pending_
+- **Result:** Pass — `Tests run: 15, Failures: 0, Errors: 0, Skipped: 0` (7 → 15).
+- **Commit hash:** _(this commit)_
+- **Push result:** pushed to `origin/main`.
 
 #### Improvement 8 — `UserController.create` duplicate-phone 409 (Gap I)
 
