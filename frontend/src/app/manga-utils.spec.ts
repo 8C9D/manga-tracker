@@ -34,6 +34,21 @@ describe('chaptersBehind', () => {
   it('handles fractional chapters on both sides', () => {
     expect(chaptersBehind('12.5', '10.25')).toBe(2);
   });
+
+  // MangaDex chapter identifiers can be non-numeric (e.g. "Oneshot"). parseFloat
+  // yields NaN for those, and the NaN > 0 comparison is false, so the badge
+  // degrades to 0 ("caught up") rather than rendering NaN.
+  it('returns 0 when latest is non-numeric', () => {
+    expect(chaptersBehind('Oneshot', '10')).toBe(0);
+  });
+
+  it('returns 0 when lastRead is non-numeric', () => {
+    expect(chaptersBehind('100', 'Oneshot')).toBe(0);
+  });
+
+  it('returns 0 when both are non-numeric', () => {
+    expect(chaptersBehind('foo', 'bar')).toBe(0);
+  });
 });
 
 describe('daysUntil', () => {

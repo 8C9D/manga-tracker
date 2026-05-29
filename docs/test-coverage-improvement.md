@@ -63,7 +63,7 @@ Gaps (high-value, see §3):
 - **Suggested tests:** extend `manga-utils.spec.ts` `chaptersBehind` describe block.
 - **Risk level:** Low.
 - **Suggested validation:** `npm run test:ci`
-- **Status:** Planned
+- **Status:** Implemented
 
 ### Other observations (not pursued)
 
@@ -114,6 +114,16 @@ No production code changes. Each validated with a targeted run, then a broader m
   - fully valid custom values are preserved unchanged.
 - **Validation run:** `./mvnw test -Dtest=MangaDexPropertiesTest`
 - **Result:** Pass — `Tests run: 4, Failures: 0, Errors: 0, Skipped: 0`.
+- **Commit hash:** `eaf40eb`
+- **Push result:** pushed to `origin/main`.
+
+### Improvement 3 — non-numeric `chaptersBehind` cases (Gap C)
+
+- **Files changed:** `frontend/src/app/manga-utils.spec.ts` (extended)
+- **Behavior covered:** `chaptersBehind` degrading to `0` for non-numeric chapter strings (which pass the truthiness guard and reach `parseFloat` → `NaN`), instead of rendering `NaN` in the "N chapters behind" badge.
+- **New test cases (3):** non-numeric `latest` → 0; non-numeric `lastRead` → 0; both non-numeric → 0.
+- **Validation run:** `npm run test:ci`
+- **Result:** Pass — `Test Files 11 passed (11)`, `Tests 139 passed (139)`.
 - **Commit hash:** _(this commit)_
 - **Push result:** pushed to `origin/main`.
 
@@ -124,4 +134,11 @@ No production code changes. Each validated with a targeted run, then a broader m
 
 ## 7. Final Notes
 
-_Filled in at the end._
+Three independent, test-only improvements were implemented, validated, committed, and pushed — no production code was changed. The skill's per-run cap of 3 safe improvements was reached.
+
+Broad validation after all changes:
+
+- Backend: `./mvnw test` → `Tests run: 194, Failures: 0, Errors: 0, Skipped: 0` (BUILD SUCCESS), up from 180 (added 10 executor + 4 properties cases).
+- Frontend: `npm run test:ci` → `Test Files 11 passed (11)`, `Tests 139 passed (139)`.
+
+Remaining lower-priority opportunities for a future pass (see §6): all are low marginal value — `ApiErrors` (implicitly covered by controller 404 tests) and pure data-holder / wiring classes. The codebase's meaningful logic is now well covered.
