@@ -225,6 +225,7 @@ _Entries below are filled in with the validated result and commit hash as each i
 - `ApiErrors`, `DefaultUserProperties`, entities/DTOs, and config/wiring classes — low marginal value or already implicitly covered.
 - A concurrency test asserting the MangaDex permit *blocks* a second caller was considered in the first pass but rejected as timing-dependent/flaky; permit lifecycle is verified deterministically instead.
 - `MangaServiceTest.deleteManga_passesIdThrough` was evaluated for removal as a near-duplicate but kept (see §4) — low cost, mild added protection.
+- Third-pass low-marginal-value items left unaddressed: `MangaController.checkNow` happy/404 (the manual single-check delegates to `MangaCheckerService.check`, already covered, and the 404 is the same `requireFound` guard now exercised by `markRead`); `MangaDexService.fetchCoverUrl` null-`relationships` branch, `findManga` empty-result wrapper, and `extractCoverUrl` cover-art-with-null-attributes — defensive edges/thin wrappers over already-tested logic. These were judged not worth a dedicated test.
 
 ## 8. Final Notes
 
