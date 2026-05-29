@@ -41,7 +41,7 @@ Remaining high-value gaps found in this second pass (see §3): the `MangaChecker
 - **Suggested tests:** extend `MangaCheckerServiceTest` with three same-chapter scenarios asserting `nextCheckDate`, computed relative to `LocalDate.now()` (matching the suite's existing `plusDays(...)` convention) so they stay deterministic.
 - **Risk level:** Low (test-only, no Spring context).
 - **Suggested validation:** `./mvnw test -Dtest=MangaCheckerServiceTest`
-- **Status:** Planned
+- **Status:** Implemented
 
 ### Gap E — `MangaCheckerService` cover-art backfill (`fetchCoverUrl`)
 
@@ -90,7 +90,18 @@ No production code changes. Each validated with a targeted run, then a broader m
 
 ### Second pass (2026-05-29)
 
-_Implemented below as each improvement lands._
+#### Improvement 4 — `computeNextCheckDate` scheduling (Gap D)
+
+- **Files changed:** `backend/src/test/java/com/mangatrack/manga/MangaCheckerServiceTest.java` (extended)
+- **Behavior covered:** the no-new-chapter re-check scheduling, previously reached but never asserted.
+- **New test cases (3):**
+  - no known update day → next check is tomorrow;
+  - update day equals tomorrow's weekday → next check is tomorrow;
+  - update day later in the week → next check is the next occurrence of that day (`TemporalAdjusters.next`).
+- **Validation run:** `./mvnw test -Dtest=MangaCheckerServiceTest`
+- **Result:** Pass — `Tests run: 9, Failures: 0, Errors: 0, Skipped: 0` (6 → 9).
+- **Commit hash:** _(this commit)_
+- **Push result:** pushed to `origin/main`.
 
 ## 6. Skipped Opportunities
 

@@ -9,6 +9,7 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -72,6 +73,69 @@ class MangaCheckerServiceTest {
 
         assertThat(m.getLatestChapter()).isEqualTo("100");
         verify(mangaRepository, times(1)).save(m);
+        verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    // --- computeNextCheckDate scheduling (no-new-chapter path) ---
+    // When a check finds no new chapter, the next check is scheduled from the
+    // known weekly update day. These assert the three branches. Expected dates
+    // are derived from a single captured `today` so they stay deterministic and
+    // match the suite's existing LocalDate.now()-relative convention.
+
+    @Test
+    void sameChapter_noKnownUpdateDay_schedulesNextCheckTomorrow() {
+        LocalDate today = LocalDate.now();
+        Manga m = new Manga("Naruto");
+        m.setMangadexId("md-id");
+        m.setCoverUrl("http://cover");
+        m.setLatestChapter("100");
+        // updateDayOfWeek deliberately left null
+
+        when(mangaDexService.fetchLatestChapter("md-id")).thenReturn(
+                Optional.of(new MangaDexService.ChapterInfo("100", LocalDate.of(2026, 5, 18))));
+
+        service.check(m);
+
+        assertThat(m.getNextCheckDate()).isEqualTo(today.plusDays(1));
+        verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    void sameChapter_updateDayIsTomorrow_schedulesNextCheckTomorrow() {
+        LocalDate today = LocalDate.now();
+        Manga m = new Manga("Naruto");
+        m.setMangadexId("md-id");
+        m.setCoverUrl("http://cover");
+        m.setLatestChapter("100");
+        m.setUpdateDayOfWeek(today.plusDays(1).getDayOfWeek());
+
+        when(mangaDexService.fetchLatestChapter("md-id")).thenReturn(
+                Optional.of(new MangaDexService.ChapterInfo("100", LocalDate.of(2026, 5, 18))));
+
+        service.check(m);
+
+        assertThat(m.getNextCheckDate()).isEqualTo(today.plusDays(1));
+        verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    void sameChapter_updateDayLaterInWeek_schedulesNextOccurrenceOfThatDay() {
+        LocalDate today = LocalDate.now();
+        // Three days out can never be tomorrow's weekday, so this lands on the
+        // "next(updateDay)" branch rather than the tomorrow shortcut.
+        DayOfWeek updateDay = today.plusDays(3).getDayOfWeek();
+        Manga m = new Manga("Naruto");
+        m.setMangadexId("md-id");
+        m.setCoverUrl("http://cover");
+        m.setLatestChapter("100");
+        m.setUpdateDayOfWeek(updateDay);
+
+        when(mangaDexService.fetchLatestChapter("md-id")).thenReturn(
+                Optional.of(new MangaDexService.ChapterInfo("100", LocalDate.of(2026, 5, 18))));
+
+        service.check(m);
+
+        assertThat(m.getNextCheckDate()).isEqualTo(today.with(TemporalAdjusters.next(updateDay)));
         verify(eventPublisher, never()).publishEvent(any());
     }
 
