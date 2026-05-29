@@ -4,6 +4,7 @@ import com.mangatrack.SecurityConfig;
 import com.mangatrack.WebConfig;
 import com.mangatrack.user.SubscriptionService;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -17,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.Duration;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
@@ -190,6 +192,32 @@ class MangaControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.title", is("Naruto")))
                 .andExpect(jsonPath("$.mangadexId").doesNotExist());
+    }
+
+    @WithMockUser
+    @Test
+    void add_withOptionalFields_persistsThemAndAutoSubscribes() throws Exception {
+        // The happy path must copy mangadexId/coverUrl/noSource onto the saved entity
+        // (dropping mangadexId would silently disable chapter checks) and must
+        // auto-subscribe the default user once the save succeeds.
+        when(mangaRepository.save(any(Manga.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        mvc.perform(post("/api/manga")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Naruto\",\"mangadexId\":\"md-1\",\"coverUrl\":\"http://cover\",\"noSource\":true}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.title", is("Naruto")));
+
+        ArgumentCaptor<Manga> captor = ArgumentCaptor.forClass(Manga.class);
+        verify(mangaRepository).save(captor.capture());
+        Manga persisted = captor.getValue();
+        assertThat(persisted.getTitle()).isEqualTo("Naruto");
+        assertThat(persisted.getMangadexId()).isEqualTo("md-1");
+        assertThat(persisted.getCoverUrl()).isEqualTo("http://cover");
+        assertThat(persisted.isNoSource()).isTrue();
+
+        // Auto-subscribe must run on success, with the saved manga.
+        verify(subscriptionService).autoSubscribeDefaultUser(persisted);
     }
 
     @WithMockUser

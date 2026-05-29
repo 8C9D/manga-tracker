@@ -76,7 +76,7 @@ The third pass (2026-05-29) targets the most significant remaining behavioral ga
 - **Suggested tests:** one `add_withOptionalFields_persistsThemAndAutoSubscribes` slice test.
 - **Risk level:** Low.
 - **Suggested validation:** `./mvnw test -Dtest=MangaControllerTest`
-- **Status:** Planned
+- **Status:** Implemented
 
 ### Gap K — `MangaDexService.extractTitle` non-English fallback chain
 
@@ -165,7 +165,7 @@ _Entries below are filled in with the validated result and commit hash as each i
 - **New test cases (1):** `save` throws → 409 with `Conflict` envelope and the phone-number message.
 - **Validation run:** `./mvnw test -Dtest=UserControllerTest`
 - **Result:** Pass — `Tests run: 16, Failures: 0, Errors: 0, Skipped: 0` (15 → 16).
-- **Commit hash:** _(this commit)_
+- **Commit hash:** `a3cc02a`
 - **Push result:** pushed to `origin/main`.
 
 #### Improvement 9 — `MangaController.add` field persistence + auto-subscribe (Gap J)
@@ -174,9 +174,9 @@ _Entries below are filled in with the validated result and commit hash as each i
 - **Behavior covered:** optional fields copied onto the saved entity and auto-subscribe invoked on success.
 - **New test cases (1):** add with `mangadexId`/`coverUrl`/`noSource:true` → captured saved `Manga` carries all three + `autoSubscribeDefaultUser` invoked.
 - **Validation run:** `./mvnw test -Dtest=MangaControllerTest`
-- **Result:** _pending_
-- **Commit hash:** _pending_
-- **Push result:** _pending_
+- **Result:** Pass — `Tests run: 24, Failures: 0, Errors: 0, Skipped: 0` (23 → 24).
+- **Commit hash:** _(this commit)_
+- **Push result:** pushed to `origin/main`.
 
 #### Improvement 10 — `MangaDexService.extractTitle` fallback chain (Gap K)
 
