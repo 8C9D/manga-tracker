@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -248,6 +249,38 @@ class MangaControllerTest {
                         .content("{\"chapter\":\"\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.chapter").exists());
+    }
+
+    @WithMockUser
+    @Test
+    void markRead_validChapter_persistsAndReturnsUpdatedDto() throws Exception {
+        // The user's reading progress must be written onto the entity and reflected
+        // back. save returns its argument, so the response DTO proves persistence.
+        Manga existing = new Manga("Naruto");
+        when(mangaRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(mangaRepository.save(any(Manga.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        mvc.perform(patch("/api/manga/1/read")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"chapter\":\"50\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title", is("Naruto")))
+                .andExpect(jsonPath("$.lastReadChapter", is("50")));
+
+        verify(mangaRepository).save(existing);
+    }
+
+    @WithMockUser
+    @Test
+    void markRead_unknownId_returns404AndDoesNotSave() throws Exception {
+        when(mangaRepository.findById(1L)).thenReturn(Optional.empty());
+
+        mvc.perform(patch("/api/manga/1/read")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"chapter\":\"50\"}"))
+                .andExpect(status().isNotFound());
+
+        verify(mangaRepository, never()).save(any());
     }
 
     @WithMockUser

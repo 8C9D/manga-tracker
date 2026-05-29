@@ -100,6 +100,17 @@ The third pass (2026-05-29) targets the most significant remaining behavioral ga
 - **Suggested validation:** `./mvnw test -Dtest=MangaCheckOrchestratorTest`
 - **Status:** Implemented
 
+### Gap M — `MangaController.markRead` reading-progress persistence
+
+- **Location/files:** `MangaController.java`, `MangaControllerTest.java`
+- **Why it matters:** `PATCH /api/manga/{id}/read` records the user's last-read chapter — the core "mark as read" feature that drives the frontend "chapters behind" indicator. Only the blank-chapter 400 was tested. The happy path (set `lastReadChapter`, persist, return the updated DTO) and the unknown-id 404 guard (`ApiErrors.requireFound`, which prevents an NPE on `setLastReadChapter` for a missing manga) were both untested — a regression could silently lose reading progress or 500 on a stale id.
+- **Existing tests:** `markRead_blankChapter_returns400` only.
+- **Missing cases:** valid chapter → 200 with `lastReadChapter` persisted; unknown id → 404 with no save.
+- **Suggested tests:** two `markRead_*` slice tests.
+- **Risk level:** Low.
+- **Suggested validation:** `./mvnw test -Dtest=MangaControllerTest`
+- **Status:** Implemented
+
 ### Other observations (not pursued)
 
 - `ApiErrors`, `DefaultUserProperties` (no normalization logic), entities/DTOs, and config/wiring classes — low marginal value or already implicitly covered.
@@ -119,7 +130,7 @@ No other clearly useless, misleading, brittle, or redundant tests were found. Th
 
 ## 5. Test Improvement Plan
 
-Third pass — six low-risk, test-only additions, grouped into five commits (all in existing test classes, no production changes):
+Third pass — seven low-risk, test-only additions, grouped into six commits (all in existing test classes, no production changes):
 
 1. **Gap G** — `UserControllerTest`: subscribe endpoint 201/404-manga/409/404-user.
 2. **Gap H** — `UserControllerTest`: getSubscriptions 404 + happy; unsubscribe delete + idempotent no-op.
@@ -127,8 +138,9 @@ Third pass — six low-risk, test-only additions, grouped into five commits (all
 4. **Gap J** — `MangaControllerTest`: add optional-field persistence + auto-subscribe on success.
 5. **Gap K** — `MangaDexServiceTest`: extractTitle fallback chain (alt titles, first value, "Unknown").
 6. **Gap L** — `MangaCheckOrchestratorTest`: executor-rejection flag reset + rethrow.
+7. **Gap M** — `MangaControllerTest`: markRead reading-progress persistence + missing-id 404.
 
-(Gaps G+H are committed together as the `UserController` subscription sub-resource; Gap I separately.) Each validated with a targeted run, then a broader module run.
+(Gaps G+H are committed together as the `UserController` subscription sub-resource; Gap I separately. Gap M was discovered during implementation and committed with its own slice.) Each validated with a targeted run, then a broader module run.
 
 ## 6. Implemented Test Improvements
 
@@ -195,6 +207,16 @@ _Entries below are filled in with the validated result and commit hash as each i
 - **New test cases (1):** throwing executor → exception propagates, flag reset, next start can claim the slot.
 - **Validation run:** `./mvnw test -Dtest=MangaCheckOrchestratorTest`
 - **Result:** Pass — `Tests run: 14, Failures: 0, Errors: 0, Skipped: 0` (13 → 14).
+- **Commit hash:** `b22ddeb`
+- **Push result:** pushed to `origin/main`.
+
+#### Improvement 12 — `MangaController.markRead` reading-progress persistence (Gap M)
+
+- **Files changed:** `MangaControllerTest.java` (extended)
+- **Behavior covered:** the mark-as-read happy path and its missing-manga guard.
+- **New test cases (2):** valid chapter → 200 with persisted `lastReadChapter` (save returns its argument, so the DTO proves persistence); unknown id → 404 + `save` never called.
+- **Validation run:** `./mvnw test -Dtest=MangaControllerTest`
+- **Result:** Pass — `Tests run: 26, Failures: 0, Errors: 0, Skipped: 0` (24 → 26).
 - **Commit hash:** _(this commit)_
 - **Push result:** pushed to `origin/main`.
 
@@ -206,11 +228,11 @@ _Entries below are filled in with the validated result and commit hash as each i
 
 ## 8. Final Notes
 
-Third pass: six independent, test-only improvements (Gaps G–L) across five commits, each validated, committed, and pushed individually — no production code changed. The most significant gain is the `UserController` subscription sub-resource, which had no behavioral coverage at the controller layer despite encoding the core anti-duplicate-subscription rule.
+Third pass: seven independent, test-only improvements (Gaps G–M) across six commits, each validated, committed, and pushed individually — no production code changed. The most significant gain is the `UserController` subscription sub-resource, which had no behavioral coverage at the controller layer despite encoding the core anti-duplicate-subscription rule.
 
 Broad validation after all third-pass changes:
 
-- Backend: `./mvnw test` → `Tests run: 214, Failures: 0, Errors: 0, Skipped: 0` (BUILD SUCCESS), up from 200 (added 8 subscription + 1 create-conflict + 1 add-fields + 3 title-fallback + 1 executor-rejection).
+- Backend: `./mvnw test` → `Tests run: 216, Failures: 0, Errors: 0, Skipped: 0` (BUILD SUCCESS), up from 200 (added 8 subscription + 1 create-conflict + 1 add-fields + 3 title-fallback + 1 executor-rejection + 2 markRead).
 - Frontend: unchanged this pass (no new frontend gaps; `manga-utils` and `describeHttpError` remain exhaustive).
 
 Remaining opportunities are low marginal value (see §7). The codebase's meaningful logic — HTTP resilience, scheduling, notification idempotency/retry, error envelopes, rate limiting, controller error paths, and now the subscription contract and title resolution — is well covered.
