@@ -52,7 +52,7 @@ Gaps (high-value, see §3):
 - **Suggested tests:** new `MangaDexPropertiesTest` (pure unit, direct record construction).
 - **Risk level:** Low.
 - **Suggested validation:** `./mvnw test -Dtest=MangaDexPropertiesTest`
-- **Status:** Planned
+- **Status:** Implemented
 
 ### Gap C — `chaptersBehind` with non-numeric chapter strings
 
@@ -100,6 +100,20 @@ No production code changes. Each validated with a targeted run, then a broader m
   - interrupt during backoff → `MangaDexInterruptedException`, interrupt flag restored, supplier run exactly once.
 - **Validation run:** `./mvnw test -Dtest=MangaDexCallExecutorTest`
 - **Result:** Pass — `Tests run: 10, Failures: 0, Errors: 0, Skipped: 0`.
+- **Commit hash:** `1d7e42d`
+- **Push result:** pushed to `origin/main`.
+
+### Improvement 2 — `MangaDexPropertiesTest` (Gap B)
+
+- **Files changed:** `backend/src/test/java/com/mangatrack/manga/MangaDexPropertiesTest.java` (new)
+- **Behavior covered:** the `@ConfigurationProperties` record's compact-constructor normalization of operator-supplied config.
+- **New test cases (4):**
+  - null `baseUrl`/timeouts/backoffs fall back to defaults while valid counts pass through;
+  - blank `baseUrl` falls back to the default;
+  - non-positive `maxConcurrentRequests`/`maxAttempts` (both `0` and negative) fall back to `3`;
+  - fully valid custom values are preserved unchanged.
+- **Validation run:** `./mvnw test -Dtest=MangaDexPropertiesTest`
+- **Result:** Pass — `Tests run: 4, Failures: 0, Errors: 0, Skipped: 0`.
 - **Commit hash:** _(this commit)_
 - **Push result:** pushed to `origin/main`.
 
