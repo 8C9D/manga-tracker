@@ -87,6 +87,84 @@ class MangaDexServiceTest {
     }
 
     @Test
+    void searchManga_noEnglishTitle_fallsBackToAltTitleEn() {
+        // No "en" key in title; resolver must scan altTitles and pick the "en" entry,
+        // skipping non-en alternates.
+        String body = """
+                {
+                  "data": [
+                    {
+                      "id": "md-1",
+                      "attributes": {
+                        "title": {"ja": "naruto-ja"},
+                        "altTitles": [{"fr": "Naruto FR"}, {"en": "Naruto EN-alt"}]
+                      },
+                      "relationships": []
+                    }
+                  ]
+                }
+                """;
+        server.expect(requestTo(SEARCH_URI))
+                .andRespond(withSuccess(body, MediaType.APPLICATION_JSON));
+
+        List<MangaDexService.MangaSearchResult> results = service.searchManga("naruto");
+
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).title()).isEqualTo("Naruto EN-alt");
+        server.verify();
+    }
+
+    @Test
+    void searchManga_noEnglishAnywhere_fallsBackToFirstTitleValue() {
+        // No "en" in title and no altTitles: resolver falls back to the first
+        // available title value rather than dropping the name.
+        String body = """
+                {
+                  "data": [
+                    {
+                      "id": "md-2",
+                      "attributes": {"title": {"ja": "Naruto JP"}},
+                      "relationships": []
+                    }
+                  ]
+                }
+                """;
+        server.expect(requestTo(SEARCH_URI))
+                .andRespond(withSuccess(body, MediaType.APPLICATION_JSON));
+
+        List<MangaDexService.MangaSearchResult> results = service.searchManga("naruto");
+
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).title()).isEqualTo("Naruto JP");
+        server.verify();
+    }
+
+    @Test
+    void searchManga_noUsableTitle_fallsBackToUnknown() {
+        // Empty title map and no altTitles: resolver must not NPE or emit a blank
+        // title — it returns the "Unknown" floor.
+        String body = """
+                {
+                  "data": [
+                    {
+                      "id": "md-3",
+                      "attributes": {"title": {}},
+                      "relationships": []
+                    }
+                  ]
+                }
+                """;
+        server.expect(requestTo(SEARCH_URI))
+                .andRespond(withSuccess(body, MediaType.APPLICATION_JSON));
+
+        List<MangaDexService.MangaSearchResult> results = service.searchManga("naruto");
+
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).title()).isEqualTo("Unknown");
+        server.verify();
+    }
+
+    @Test
     void fetchLatestChapter_happyPath_returnsChapter() {
         String body = """
                 {

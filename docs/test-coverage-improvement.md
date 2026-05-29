@@ -87,7 +87,7 @@ The third pass (2026-05-29) targets the most significant remaining behavioral ga
 - **Suggested tests:** three `searchManga_*` slice tests driving `MockRestServiceServer` with the respective JSON shapes.
 - **Risk level:** Low (uses the file's existing `MockRestServiceServer` harness).
 - **Suggested validation:** `./mvnw test -Dtest=MangaDexServiceTest`
-- **Status:** Planned
+- **Status:** Implemented
 
 ### Gap L — `MangaCheckOrchestrator.tryStartManualCheckAll` executor-rejection reset
 
@@ -175,7 +175,7 @@ _Entries below are filled in with the validated result and commit hash as each i
 - **New test cases (1):** add with `mangadexId`/`coverUrl`/`noSource:true` → captured saved `Manga` carries all three + `autoSubscribeDefaultUser` invoked.
 - **Validation run:** `./mvnw test -Dtest=MangaControllerTest`
 - **Result:** Pass — `Tests run: 24, Failures: 0, Errors: 0, Skipped: 0` (23 → 24).
-- **Commit hash:** _(this commit)_
+- **Commit hash:** `c12ee62`
 - **Push result:** pushed to `origin/main`.
 
 #### Improvement 10 — `MangaDexService.extractTitle` fallback chain (Gap K)
@@ -184,9 +184,9 @@ _Entries below are filled in with the validated result and commit hash as each i
 - **Behavior covered:** non-English title resolution fallbacks.
 - **New test cases (3):** altTitles `en` fallback; first-value fallback; `"Unknown"` floor.
 - **Validation run:** `./mvnw test -Dtest=MangaDexServiceTest`
-- **Result:** _pending_
-- **Commit hash:** _pending_
-- **Push result:** _pending_
+- **Result:** Pass — `Tests run: 14, Failures: 0, Errors: 0, Skipped: 0` (11 → 14).
+- **Commit hash:** _(this commit)_
+- **Push result:** pushed to `origin/main`.
 
 #### Improvement 11 — `MangaCheckOrchestrator` executor-rejection reset (Gap L)
 
