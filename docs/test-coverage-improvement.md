@@ -52,7 +52,7 @@ Remaining high-value gaps found in this second pass (see §3): the `MangaChecker
 - **Suggested tests:** extend `MangaCheckerServiceTest` with two scenarios where `coverUrl` starts null and a `mangadexId` is present.
 - **Risk level:** Low.
 - **Suggested validation:** `./mvnw test -Dtest=MangaCheckerServiceTest`
-- **Status:** Planned
+- **Status:** Implemented
 
 ### Gap F — `MangaController.add` duplicate-title conflict (409)
 
@@ -100,6 +100,18 @@ No production code changes. Each validated with a targeted run, then a broader m
   - update day later in the week → next check is the next occurrence of that day (`TemporalAdjusters.next`).
 - **Validation run:** `./mvnw test -Dtest=MangaCheckerServiceTest`
 - **Result:** Pass — `Tests run: 9, Failures: 0, Errors: 0, Skipped: 0` (6 → 9).
+- **Commit hash:** `8ba2882`
+- **Push result:** pushed to `origin/main`.
+
+#### Improvement 5 — cover-art backfill (Gap E)
+
+- **Files changed:** `backend/src/test/java/com/mangatrack/manga/MangaCheckerServiceTest.java` (extended)
+- **Behavior covered:** the `fetchCoverUrl` backfill branch (known id, null cover), which no prior test reached.
+- **New test cases (2):**
+  - `fetchCoverUrl` returns a URL → cover is set;
+  - `fetchCoverUrl` empty → cover stays null (no crash).
+- **Validation run:** `./mvnw test -Dtest=MangaCheckerServiceTest`
+- **Result:** Pass — `Tests run: 11, Failures: 0, Errors: 0, Skipped: 0` (9 → 11).
 - **Commit hash:** _(this commit)_
 - **Push result:** pushed to `origin/main`.
 

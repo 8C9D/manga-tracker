@@ -185,4 +185,46 @@ class MangaCheckerServiceTest {
         verify(mangaRepository, times(1)).save(m);
         verify(eventPublisher, times(1)).publishEvent(any(NewChapterEvent.class));
     }
+
+    // --- cover-art backfill (known id, missing cover) ---
+    // When a manga has a MangaDex id but no cover yet (e.g. a search result
+    // without a cover, or a pre-existing row), the checker backfills it via
+    // fetchCoverUrl before fetching chapters. Same-chapter responses keep these
+    // focused on the cover outcome.
+
+    @Test
+    void knownId_nullCover_backfillsCoverWhenFetchReturnsUrl() {
+        Manga m = new Manga("Naruto");
+        m.setMangadexId("md-id");
+        m.setLatestChapter("100");
+        // coverUrl deliberately left null
+
+        when(mangaDexService.fetchCoverUrl("md-id")).thenReturn(Optional.of("http://backfilled-cover"));
+        when(mangaDexService.fetchLatestChapter("md-id")).thenReturn(
+                Optional.of(new MangaDexService.ChapterInfo("100", LocalDate.of(2026, 5, 18))));
+
+        service.check(m);
+
+        assertThat(m.getCoverUrl()).isEqualTo("http://backfilled-cover");
+        verify(mangaDexService).fetchCoverUrl("md-id");
+        verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    void knownId_nullCover_leavesCoverNullWhenFetchEmpty() {
+        Manga m = new Manga("Naruto");
+        m.setMangadexId("md-id");
+        m.setLatestChapter("100");
+        // coverUrl deliberately left null
+
+        when(mangaDexService.fetchCoverUrl("md-id")).thenReturn(Optional.empty());
+        when(mangaDexService.fetchLatestChapter("md-id")).thenReturn(
+                Optional.of(new MangaDexService.ChapterInfo("100", LocalDate.of(2026, 5, 18))));
+
+        service.check(m);
+
+        assertThat(m.getCoverUrl()).isNull();
+        verify(mangaDexService).fetchCoverUrl("md-id");
+        verify(eventPublisher, never()).publishEvent(any());
+    }
 }
