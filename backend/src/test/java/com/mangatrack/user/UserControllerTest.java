@@ -8,6 +8,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
@@ -94,6 +95,22 @@ class UserControllerTest {
                         .content("{\"name\":\"Bob\",\"phoneNumber\":\"555-1234\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.phoneNumber").exists());
+    }
+
+    @WithMockUser
+    @Test
+    void create_duplicatePhone_returns409() throws Exception {
+        // The unique phone-number constraint surfaces as DataIntegrityViolationException;
+        // the controller must translate it to a 409 rather than leaking a 500.
+        when(userRepository.save(any(User.class)))
+                .thenThrow(new DataIntegrityViolationException("Unique index violated"));
+
+        mvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Bob\",\"phoneNumber\":\"+12025551234\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error", is("Conflict")))
+                .andExpect(jsonPath("$.message", is("A user with that phone number already exists")));
     }
 
     @WithMockUser
