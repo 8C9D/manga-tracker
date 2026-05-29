@@ -9,8 +9,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
@@ -88,6 +90,37 @@ class MangaCheckOrchestratorTest {
 
         // The per-manga catch absorbs the throw, so the second call must also succeed.
         assertThat(orchestrator.tryStartManualCheckAll()).isTrue();
+    }
+
+    @Test
+    void manualCheckAll_executorRejectsSubmission_resetsFlagAndRethrows() {
+        when(repository.findAll()).thenReturn(List.of(new Manga("A")));
+        // Executor rejects the first submission (pool saturated / shut down), then
+        // behaves normally. If the flag weren't reset on rejection, it would stay
+        // stuck true and every future manual check would be permanently blocked.
+        Executor rejectThenRun = new Executor() {
+            private boolean firstCall = true;
+            @Override
+            public void execute(Runnable command) {
+                if (firstCall) {
+                    firstCall = false;
+                    throw new RejectedExecutionException("pool saturated");
+                }
+                command.run();
+            }
+        };
+        MangaCheckOrchestrator orchestrator =
+                new MangaCheckOrchestrator(repository, checkerService, rejectThenRun);
+
+        // The rejection must propagate to the caller (so the controller can surface it)...
+        assertThatThrownBy(orchestrator::tryStartManualCheckAll)
+                .isInstanceOf(RejectedExecutionException.class);
+        // ...and the run flag must be cleared, not left stuck.
+        assertThat(orchestrator.isManualRunInProgress()).isFalse();
+
+        // A subsequent start can therefore claim the slot and run the batch.
+        assertThat(orchestrator.tryStartManualCheckAll()).isTrue();
+        verify(checkerService).check(any(Manga.class));
     }
 
     @Test

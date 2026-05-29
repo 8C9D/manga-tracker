@@ -98,7 +98,7 @@ The third pass (2026-05-29) targets the most significant remaining behavioral ga
 - **Suggested tests:** one test with a throwing executor asserting the rethrow and the reset.
 - **Risk level:** Low.
 - **Suggested validation:** `./mvnw test -Dtest=MangaCheckOrchestratorTest`
-- **Status:** Planned
+- **Status:** Implemented
 
 ### Other observations (not pursued)
 
@@ -185,7 +185,7 @@ _Entries below are filled in with the validated result and commit hash as each i
 - **New test cases (3):** altTitles `en` fallback; first-value fallback; `"Unknown"` floor.
 - **Validation run:** `./mvnw test -Dtest=MangaDexServiceTest`
 - **Result:** Pass — `Tests run: 14, Failures: 0, Errors: 0, Skipped: 0` (11 → 14).
-- **Commit hash:** _(this commit)_
+- **Commit hash:** `5ed22c5`
 - **Push result:** pushed to `origin/main`.
 
 #### Improvement 11 — `MangaCheckOrchestrator` executor-rejection reset (Gap L)
@@ -194,9 +194,9 @@ _Entries below are filled in with the validated result and commit hash as each i
 - **Behavior covered:** the compensating flag reset + rethrow when the executor rejects the task.
 - **New test cases (1):** throwing executor → exception propagates, flag reset, next start can claim the slot.
 - **Validation run:** `./mvnw test -Dtest=MangaCheckOrchestratorTest`
-- **Result:** _pending_
-- **Commit hash:** _pending_
-- **Push result:** _pending_
+- **Result:** Pass — `Tests run: 14, Failures: 0, Errors: 0, Skipped: 0` (13 → 14).
+- **Commit hash:** _(this commit)_
+- **Push result:** pushed to `origin/main`.
 
 ## 7. Skipped Opportunities
 
@@ -206,10 +206,11 @@ _Entries below are filled in with the validated result and commit hash as each i
 
 ## 8. Final Notes
 
-Third pass: six independent, test-only improvements (Gaps G–L) planned across five commits, each to be validated, committed, and pushed individually — no production code changed. The most significant gain is the `UserController` subscription sub-resource, which had no behavioral coverage at the controller layer despite encoding the core anti-duplicate-subscription rule.
+Third pass: six independent, test-only improvements (Gaps G–L) across five commits, each validated, committed, and pushed individually — no production code changed. The most significant gain is the `UserController` subscription sub-resource, which had no behavioral coverage at the controller layer despite encoding the core anti-duplicate-subscription rule.
 
-Baseline before this pass: `./mvnw test` → `Tests run: 200, Failures: 0, Errors: 0, Skipped: 0` (BUILD SUCCESS). The broad post-pass total is recorded here once all third-pass commits land.
+Broad validation after all third-pass changes:
 
-Frontend is unchanged this pass (no new frontend gaps; `manga-utils` and `describeHttpError` remain exhaustive).
+- Backend: `./mvnw test` → `Tests run: 214, Failures: 0, Errors: 0, Skipped: 0` (BUILD SUCCESS), up from 200 (added 8 subscription + 1 create-conflict + 1 add-fields + 3 title-fallback + 1 executor-rejection).
+- Frontend: unchanged this pass (no new frontend gaps; `manga-utils` and `describeHttpError` remain exhaustive).
 
 Remaining opportunities are low marginal value (see §7). The codebase's meaningful logic — HTTP resilience, scheduling, notification idempotency/retry, error envelopes, rate limiting, controller error paths, and now the subscription contract and title resolution — is well covered.
