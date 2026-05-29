@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
@@ -189,6 +190,26 @@ class MangaControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.title", is("Naruto")))
                 .andExpect(jsonPath("$.mangadexId").doesNotExist());
+    }
+
+    @WithMockUser
+    @Test
+    void add_duplicateTitle_returns409ConflictAndDoesNotAutoSubscribe() throws Exception {
+        // The unique-title constraint surfaces as DataIntegrityViolationException;
+        // the controller must translate it to a 409 with an "Already tracking"
+        // message and must NOT auto-subscribe the default user after a failed save.
+        when(mangaRepository.save(any(Manga.class)))
+                .thenThrow(new DataIntegrityViolationException("Unique index violated"));
+
+        mvc.perform(post("/api/manga")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Naruto\",\"noSource\":false}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error", is("Conflict")))
+                .andExpect(jsonPath("$.message", containsString("Already tracking")))
+                .andExpect(jsonPath("$.message", containsString("Naruto")));
+
+        verify(subscriptionService, never()).autoSubscribeDefaultUser(any());
     }
 
     @WithMockUser

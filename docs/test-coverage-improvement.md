@@ -63,7 +63,7 @@ Remaining high-value gaps found in this second pass (see §3): the `MangaChecker
 - **Suggested tests:** extend `MangaControllerTest` with a conflict scenario (stub `save` to throw), asserting status, `$.error`, `$.message`, and no auto-subscribe.
 - **Risk level:** Low (slice test, no behavior change).
 - **Suggested validation:** `./mvnw test -Dtest=MangaControllerTest`
-- **Status:** Planned
+- **Status:** Implemented
 
 ### Other observations (not pursued)
 
@@ -112,6 +112,16 @@ No production code changes. Each validated with a targeted run, then a broader m
   - `fetchCoverUrl` empty → cover stays null (no crash).
 - **Validation run:** `./mvnw test -Dtest=MangaCheckerServiceTest`
 - **Result:** Pass — `Tests run: 11, Failures: 0, Errors: 0, Skipped: 0` (9 → 11).
+- **Commit hash:** `127e258`
+- **Push result:** pushed to `origin/main`.
+
+#### Improvement 6 — duplicate-title 409 conflict (Gap F)
+
+- **Files changed:** `backend/src/test/java/com/mangatrack/manga/MangaControllerTest.java` (extended)
+- **Behavior covered:** the `add` `catch (DataIntegrityViolationException)` arm that maps a unique-title violation to a 409.
+- **New test cases (1):** `save` throws `DataIntegrityViolationException` → 409 with `Conflict` envelope, `Already tracking "Naruto"` message, and `autoSubscribeDefaultUser` never called.
+- **Validation run:** `./mvnw test -Dtest=MangaControllerTest`
+- **Result:** Pass — `Tests run: 23, Failures: 0, Errors: 0, Skipped: 0` (22 → 23).
 - **Commit hash:** _(this commit)_
 - **Push result:** pushed to `origin/main`.
 
@@ -122,4 +132,11 @@ No production code changes. Each validated with a targeted run, then a broader m
 
 ## 7. Final Notes
 
-_Updated as the second pass completes._
+Second pass: three independent, test-only improvements (Gaps D, E, F), each validated, committed, and pushed — no production code changed. The skill's per-run cap of 3 was reached.
+
+Broad validation after all second-pass changes:
+
+- Backend: `./mvnw test` → `Tests run: 200, Failures: 0, Errors: 0, Skipped: 0` (BUILD SUCCESS), up from 194 (added 3 scheduling + 2 cover-backfill + 1 conflict case).
+- Frontend: unchanged this pass (no frontend gaps remained; `manga-utils` and `describeHttpError` are already exhaustive).
+
+Remaining opportunities are low marginal value (see §6): `ApiErrors`, `DefaultUserProperties`, entities/DTOs, and config/wiring classes. The codebase's meaningful logic — HTTP resilience, scheduling, notification idempotency, error envelopes, rate limiting, and the controller error paths — is now well covered.
