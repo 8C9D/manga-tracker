@@ -41,7 +41,7 @@ Gaps (high-value, see §3):
 - **Suggested tests:** new `MangaDexCallExecutorTest` (pure unit, lambda `Sleeper`, supplier stubs throwing the relevant Spring web exceptions).
 - **Risk level:** Low (test-only, no Spring context).
 - **Suggested validation:** `./mvnw test -Dtest=MangaDexCallExecutorTest`
-- **Status:** Planned
+- **Status:** Implemented
 
 ### Gap B — `MangaDexProperties` defensive defaulting
 
@@ -83,7 +83,25 @@ No production code changes. Each validated with a targeted run, then a broader m
 
 ## 5. Implemented Test Improvements
 
-_Filled in per improvement as completed below._
+### Improvement 1 — `MangaDexCallExecutorTest` (Gap A)
+
+- **Files changed:** `backend/src/test/java/com/mangatrack/manga/MangaDexCallExecutorTest.java` (new)
+- **Behavior covered:** the executor's own contract, distinct from the service-layer HTTP tests.
+- **New test cases (10):**
+  - happy path returns the supplier value without sleeping;
+  - 400 propagates immediately, no retry/sleep;
+  - 429 propagates immediately, no retry/sleep (avoids amplifying throttling);
+  - 5xx retries to `maxAttempts` then rethrows the last exception, with backoff `[250ms, 1s]` (x4 doubling capped at `maxBackoff`);
+  - transport (`ResourceAccessException`) retries to `maxAttempts` then rethrows;
+  - 5xx-then-success recovers after a single backoff;
+  - `maxAttempts == 1` does not retry a 5xx and does not sleep;
+  - permit is released after every outcome (success / 4xx / exhausted 5xx) so subsequent single-permit calls proceed — guarded by a preemptive timeout to convert a latent leak into a clean failure;
+  - interrupt while acquiring a permit → `MangaDexInterruptedException`, interrupt flag restored, supplier never run;
+  - interrupt during backoff → `MangaDexInterruptedException`, interrupt flag restored, supplier run exactly once.
+- **Validation run:** `./mvnw test -Dtest=MangaDexCallExecutorTest`
+- **Result:** Pass — `Tests run: 10, Failures: 0, Errors: 0, Skipped: 0`.
+- **Commit hash:** _(this commit)_
+- **Push result:** pushed to `origin/main`.
 
 ## 6. Skipped Opportunities
 
