@@ -7,6 +7,7 @@ import com.mangatrack.user.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +17,12 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+// Disabled by default while automated SMS is paused: with
+// notification.sms.retry.enabled unset/false this bean is never registered, so
+// retryFailed() never fires and no Twilio retries are sent. Set the flag to true
+// (see application.properties) to re-enable retry of FAILED notifications.
 @Component
+@ConditionalOnProperty(name = "notification.sms.retry.enabled", havingValue = "true", matchIfMissing = false)
 public class NotificationRetryScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(NotificationRetryScheduler.class);

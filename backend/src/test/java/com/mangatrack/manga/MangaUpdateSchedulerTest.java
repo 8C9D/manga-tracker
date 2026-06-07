@@ -5,6 +5,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.support.CronExpression;
 
@@ -65,6 +66,21 @@ class MangaUpdateSchedulerTest {
         LocalDateTime next = cron.next(LocalDateTime.of(2026, 1, 1, 9, 30));
 
         assertThat(next).isEqualTo(LocalDateTime.of(2026, 1, 2, 9, 0));
+    }
+
+    // --- disabled-by-default gating ---
+    // The daily check is gated off until the MangaDex update API is fixed: with
+    // manga.check.scheduled.enabled unset/false the bean is never registered and
+    // the job never fires. Pinned here so a change to the flag name or its default
+    // surfaces as a test failure rather than silent, unexpected SMS in prod.
+
+    @Test
+    void scheduler_isGatedByDisabledByDefaultProperty() {
+        ConditionalOnProperty gate = MangaUpdateScheduler.class.getAnnotation(ConditionalOnProperty.class);
+        assertThat(gate).as("@ConditionalOnProperty must gate the scheduler bean").isNotNull();
+        assertThat(gate.name()).containsExactly("manga.check.scheduled.enabled");
+        assertThat(gate.havingValue()).isEqualTo("true");
+        assertThat(gate.matchIfMissing()).as("must be off unless explicitly enabled").isFalse();
     }
 
     private static Scheduled scheduledAnnotation() throws NoSuchMethodException {

@@ -10,6 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.HashSet;
@@ -165,6 +166,18 @@ class NotificationRetrySchedulerTest {
         verify(dispatcher).sendOnce(alice, naruto, "101");
         verify(dispatcher).sendOnce(alice, bleach, "5");
         verify(dispatcher).sendOnce(charlie, naruto, "102");
+    }
+
+    // The hourly retry is gated off while automated SMS is paused: with
+    // notification.sms.retry.enabled unset/false the bean is never registered and
+    // retryFailed() never fires. Pinned so the flag name or default can't drift silently.
+    @Test
+    void scheduler_isGatedByDisabledByDefaultProperty() {
+        ConditionalOnProperty gate = NotificationRetryScheduler.class.getAnnotation(ConditionalOnProperty.class);
+        assertThat(gate).as("@ConditionalOnProperty must gate the scheduler bean").isNotNull();
+        assertThat(gate.name()).containsExactly("notification.sms.retry.enabled");
+        assertThat(gate.havingValue()).isEqualTo("true");
+        assertThat(gate.matchIfMissing()).as("must be off unless explicitly enabled").isFalse();
     }
 
     private NotificationLog buildFailedLog(Long userId, Long mangaId, String chapter) {
