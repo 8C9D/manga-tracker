@@ -87,6 +87,24 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+			<!--
+			  Pin the test datasource to H2 as JVM system properties. Spring Boot ranks
+			  system properties above OS environment variables, so this overrides the
+			  MySQL SPRING_DATASOURCE_* that mise auto-loads from .env (commit 6d9570b),
+			  which would otherwise feed a MySQL URL to the H2 driver and break every
+			  @SpringBootTest. Tests always run on H2 — do not remove without replacing.
+			-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<systemPropertyVariables>
+						<spring.datasource.url>jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1</spring.datasource.url>
+						<spring.datasource.username>sa</spring.datasource.username>
+						<spring.datasource.password></spring.datasource.password>
+					</systemPropertyVariables>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 
